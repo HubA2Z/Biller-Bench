@@ -46,7 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main className="wrap">{children}</main>
         <footer className="foot">
           Answers are general billing guidance based on published payer and CMS policy, not a guarantee of payment or legal advice.
-          CPT® is a registered trademark of the American Medical Association. Never post patient information in a public question.
+          CPT® is a registered trademark of the American Medical Association. Never post patient information on BillerBench.
         </footer>
       </body>
     </html>

@@ -1,5 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -16,6 +17,8 @@ import { questionPath } from "@/lib/paths";
 import { planQuestionsUsed } from "@/lib/queries";
 import { appUrl, fakePayments, stripe } from "@/lib/stripe";
 import { finalizeUrgentPayment } from "@/lib/payments";
+import { LIMITS, hit, waitMessage } from "@/lib/rate-limit";
+import { notifyStaffOfQuestion } from "@/lib/notify";
 
 const { questions: Q, answers: A, votes: V, flags: F } = schema;
 
@@ -39,6 +42,8 @@ const askSchema = z.object({
 export async function createQuestion(_: AskState, form: FormData): Promise<AskState> {
   const user = await requireUser("/ask");
   if (isStaff(user)) return { errors: ["Team accounts can't ask questions. Sign in as a provider."] };
+  const limit = await hit(`ask:user:${user.id}`, LIMITS.askUser);
+  if (!limit.ok) return { errors: [waitMessage(limit)] };
   const parsed = askSchema.safeParse({
     tier: form.get("tier"), publish: form.get("publish") === "on",
     title: form.get("title") ?? "", body: form.get("body") ?? "", codes: form.get("codes") ?? "",
@@ -63,8 +68,8 @@ export async function createQuestion(_: AskState, form: FormData): Promise<AskSt
     else if ((await planQuestionsUsed(user.id)) >= plan.quota) errors.push(`You've used all ${plan.quota} plan questions this month. Choose Free or Urgent.`);
   }
   const isPublic = d.tier === "FREE" || d.publish;
-  if (isPublic && scanPHI(`${d.title}\n${d.body}`).length) errors.push("Remove the possible patient identifiers flagged above, or make this a private question.");
-  if (isPublic && !d.ack) errors.push("Confirm the scenario contains no patient-identifiable data.");
+  if (scanPHI(`${d.title}\n${d.body}`).length) errors.push("Remove the possible patient identifiers flagged above. BillerBench never stores patient information.");
+  if (!d.ack) errors.push("Confirm the scenario contains no patient-identifiable data.");
   if (errors.length) return { errors };
 
   const now = new Date();
@@ -81,6 +86,7 @@ export async function createQuestion(_: AskState, form: FormData): Promise<AskSt
     const url = await urgentCheckoutUrl(q.id, user, "Urgent question: answer within 4 business hours");
     redirect(url);
   }
+  after(() => notifyStaffOfQuestion(q, "new"));
   revalidatePath("/");
   redirect(questionPath(q));
 }
@@ -127,6 +133,7 @@ export async function toggleVote(form: FormData) {
   const answerId = (form.get("answerId") as string) || null;
   const path = String(form.get("path") ?? "/");
   if (!!questionId === !!answerId) return;
+  if (!(await hit(`vote:user:${user.id}`, LIMITS.voteUser)).ok) return;
   await db.transaction(async (tx) => {
     const target = questionId ? Q : A;
     const targetId = (questionId ?? answerId)!;
@@ -161,6 +168,7 @@ export async function reportPhi(form: FormData) {
   const answerId = (form.get("answerId") as string) || null;
   const path = String(form.get("path") ?? "/");
   if (!!questionId === !!answerId) return;
+  if (!(await hit(`report:user:${user.id}`, LIMITS.reportUser)).ok) return;
   await db.transaction(async (tx) => {
     await tx.insert(F).values({ reporterId: user.id, questionId, answerId });
     if (questionId) await tx.update(Q).set({ hidden: true }).where(eq(Q.id, questionId));

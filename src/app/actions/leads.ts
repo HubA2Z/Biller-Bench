@@ -1,9 +1,12 @@
 "use server";
+import { after } from "next/server";
 import { z } from "zod";
 import { db, schema } from "@/db";
 import { getCurrentUser } from "@/lib/auth";
 import { scanPHI } from "@/lib/phi";
 import { SERVICES } from "@/lib/plans";
+import { LIMITS, hitIp, waitMessage } from "@/lib/rate-limit";
+import { notifyStaffOfLead } from "@/lib/notify";
 
 export type LeadState = { error?: string; ok?: boolean; service?: string } | undefined;
 
@@ -19,15 +22,18 @@ const leadSchema = z.object({
 });
 
 export async function requestService(_: LeadState, form: FormData): Promise<LeadState> {
+  const limit = await hitIp("lead", LIMITS.leadIp);
+  if (!limit.ok) return { error: waitMessage(limit) };
   const parsed = leadSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const d = parsed.data;
   if (d.note && scanPHI(d.note).length) return { error: "Remove patient details from the note. We'll collect claim details securely after we talk." };
   const user = await getCurrentUser();
-  await db.insert(schema.serviceRequests).values({
+  const [lead] = await db.insert(schema.serviceRequests).values({
     service: d.service, practiceName: d.practiceName, contactName: d.contactName, email: d.email,
     claimsPerMonth: d.claimsPerMonth || null, payers: d.payers || null, note: d.note || null,
     questionId: d.questionId || null, userId: user?.id ?? null,
-  });
+  }).returning();
+  after(() => notifyStaffOfLead(lead));
   return { ok: true, service: d.service };
 }

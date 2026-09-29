@@ -5,6 +5,7 @@ import { db, schema } from "@/db";
 import type { Plan } from "@/db/schema";
 import { addBusinessHours } from "./sla";
 import { PLANS, URGENT } from "./plans";
+import { notifyStaffOfQuestion } from "./notify";
 
 const { questions: Q, users: U } = schema;
 
@@ -14,16 +15,18 @@ const { questions: Q, users: U } = schema;
  */
 export async function finalizeUrgentPayment(questionId: string, sessionId: string | null) {
   const now = new Date();
-  await db.update(Q).set({
+  const [paid] = await db.update(Q).set({
     tier: "URGENT",
     paidAt: now,
     stripeSessionId: sessionId,
     dueAt: addBusinessHours(now, URGENT.slaBusinessHours),
     status: "OPEN",
-  }).where(and(eq(Q.id, questionId), isNull(Q.paidAt)));
+  }).where(and(eq(Q.id, questionId), isNull(Q.paidAt))).returning();
   // An upgraded question may already have an expert answer; keep its status.
   await db.update(Q).set({ status: "ANSWERED" })
     .where(and(eq(Q.id, questionId), eq(Q.status, "OPEN"), isNotNull(Q.firstAnsweredAt)));
+  // Only the first confirmation of a payment alerts the team.
+  if (paid) await notifyStaffOfQuestion(paid, "new");
 }
 
 export function planFromPriceId(priceId: string | undefined): Plan | null {

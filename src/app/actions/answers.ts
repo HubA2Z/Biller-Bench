@@ -1,9 +1,12 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { isStaff, requireUser } from "@/lib/auth";
 import { scanPHI } from "@/lib/phi";
+import { LIMITS, hit, waitMessage } from "@/lib/rate-limit";
+import { notifyAskerOfReply, notifyStaffOfQuestion } from "@/lib/notify";
 
 const { questions: Q, answers: A } = schema;
 
@@ -22,7 +25,11 @@ export async function postAnswer(_: AnswerState, form: FormData): Promise<Answer
   if (!staff && q.authorId !== user.id) return { error: "Only our team and the practice that asked can reply." };
   if (body.length < 20) return { error: "Write at least 20 characters." };
   if (body.length > 20000) return { error: "Keep replies under 20,000 characters." };
-  if (!q.isPrivate && scanPHI(body).length) return { error: "This question is public. Remove the possible patient identifiers before posting." };
+  if (!staff) {
+    const limit = await hit(`reply:user:${user.id}`, LIMITS.replyUser);
+    if (!limit.ok) return { error: waitMessage(limit) };
+  }
+  if (scanPHI(body).length) return { error: "Remove the possible patient identifiers before posting. BillerBench never stores patient information." };
 
   await db.transaction(async (tx) => {
     await tx.insert(A).values({ questionId: q.id, authorId: user.id, type, body });
@@ -31,6 +38,7 @@ export async function postAnswer(_: AnswerState, form: FormData): Promise<Answer
       await tx.update(Q).set({ status: "ANSWERED" }).where(and(eq(Q.id, q.id), eq(Q.status, "OPEN")));
     }
   });
+  after(() => (staff ? notifyAskerOfReply(q, type) : notifyStaffOfQuestion(q, "followup")));
   revalidatePath(path);
   revalidatePath("/team");
   return { ok: true };

@@ -37,7 +37,7 @@ export function QuestionView({ data, user, notice }: { data: Data; user: User | 
         <div className="chips"><TierChips q={q} authorPlan={author.plan} /><QuestionChips q={q} /></div>
         <div className="banner">
           {q.isPrivate
-            ? <><span style={{ display: "flex", gap: 6, alignItems: "center" }}><Icon name="lock" /><strong>Private</strong></span><span className="muted">Seen only by {isAuthor ? "you" : author.practiceName ?? author.name} and the BillerBench team, under our BAA.</span></>
+            ? <><span style={{ display: "flex", gap: 6, alignItems: "center" }}><Icon name="lock" /><strong>Private</strong></span><span className="muted">Seen only by {isAuthor ? "you" : author.practiceName ?? author.name} and the BillerBench team. It isn’t published.</span></>
             : <span><strong>Public</strong></span>}
           <span className={`sla ${s.cls}`}>{s.text}</span>
           {isAuthor && q.tier === "FREE" && q.status === "OPEN" && (
@@ -105,7 +105,7 @@ export function QuestionView({ data, user, notice }: { data: Data; user: User | 
         <div className="card" style={{ marginTop: 24 }}><h3>Have a similar denial?</h3>
           <p className="muted small">Create a free account to ask our team. <Link className="clear" href="/signup">Join free</Link></p></div>
       )}
-      {(staff || isAuthor) && q.status !== "PENDING_PAYMENT" && <AnswerForm questionId={q.id} path={path} staff={staff} isPublic={!q.isPrivate} />}
+      {(staff || isAuthor) && q.status !== "PENDING_PAYMENT" && <AnswerForm questionId={q.id} path={path} staff={staff} />}
     </article>
   );
 }

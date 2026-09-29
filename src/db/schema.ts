@@ -45,6 +45,14 @@ export const users = pgTable("users", {
   stripeSubscriptionId: text("stripe_subscription_id").unique(),
   planRenewsAt: timestamp("plan_renews_at", { withTimezone: true }),
 
+  // Account
+  emailNotifications: boolean("email_notifications").notNull().default(true),
+  /** Bumped on password reset so every existing session stops working. */
+  sessionVersion: integer("session_version").notNull().default(0),
+  /** Set when an admin turns the account off; it can no longer sign in. */
+  disabledAt: timestamp("disabled_at", { withTimezone: true }),
+  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+
   createdAt: created(),
   updatedAt: updated(),
 });
@@ -141,6 +149,25 @@ export const serviceRequests = pgTable("service_requests", {
   createdAt: created(),
   updatedAt: updated(),
 }, (t) => [index("service_requests_status_idx").on(t.status)]);
+
+/** Password reset and team invite links. Only a SHA-256 hash of the token is stored. */
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  /** "reset" for forgot-password links, "invite" for new team members. */
+  purpose: text("purpose").notNull().default("reset"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: created(),
+}, (t) => [index("password_reset_tokens_user_idx").on(t.userId)]);
+
+/** Fixed-window counters for rate limiting (login attempts, posting, and so on). */
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull(),
+  resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
+}, (t) => [index("rate_limits_reset_idx").on(t.resetAt)]);
 
 export const usersRelations = relations(users, ({ many }) => ({
   questions: many(questions),

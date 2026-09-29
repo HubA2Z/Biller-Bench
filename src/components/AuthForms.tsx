@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useActionState } from "react";
-import { login, signup, type FormState } from "@/app/actions/auth";
+import { login, requestPasswordReset, resetPassword, signup, type FormState } from "@/app/actions/auth";
 import { SPECIALTIES, STATES } from "@/lib/taxonomy";
 import { SubmitButton } from "./SubmitButton";
 
@@ -11,7 +11,7 @@ export function LoginForm({ next }: { next?: string }) {
     <form action={action} className="form">
       <input type="hidden" name="next" value={next ?? "/"} />
       <div className="field"><label htmlFor="email">Email</label><input type="email" id="email" name="email" autoComplete="email" defaultValue={state?.fields?.email} required /></div>
-      <div className="field"><label htmlFor="password">Password</label><input type="password" id="password" name="password" autoComplete="current-password" required /></div>
+      <div className="field"><label htmlFor="password">Password</label><input type="password" id="password" name="password" autoComplete="current-password" required /><span className="hint"><Link href="/forgot-password">Forgot your password?</Link></span></div>
       {state?.error && <ul className="errors" role="alert"><li>{state.error}</li></ul>}
       <SubmitButton pendingText="Signing in…">Sign in</SubmitButton>
       <p className="small muted" style={{ margin: 0 }}>New here? <Link href="/signup">Create a free account</Link></p>
@@ -35,6 +35,34 @@ export function SignupForm() {
       {state?.error && <ul className="errors" role="alert"><li>{state.error}</li></ul>}
       <SubmitButton pendingText="Creating account…">Create free account</SubmitButton>
       <p className="small muted" style={{ margin: 0 }}>Already have an account? <Link href="/login">Sign in</Link></p>
+    </form>
+  );
+}
+
+export function ForgotForm() {
+  const [state, action] = useActionState<FormState, FormData>(requestPasswordReset, undefined);
+  if (state?.ok) {
+    return <div className="phi ok">If an account exists for <strong>{state.fields?.email}</strong>, we’ve sent a reset link. It expires in one hour. Check your spam folder if it doesn’t arrive in a few minutes.</div>;
+  }
+  return (
+    <form action={action} className="form">
+      <div className="field"><label htmlFor="email">Email</label><input type="email" id="email" name="email" autoComplete="email" defaultValue={state?.fields?.email} required /></div>
+      {state?.error && <ul className="errors" role="alert"><li>{state.error}</li></ul>}
+      <SubmitButton pendingText="Sending…">Send reset link</SubmitButton>
+      <p className="small muted" style={{ margin: 0 }}><Link href="/login">Back to sign in</Link></p>
+    </form>
+  );
+}
+
+export function ResetForm({ token }: { token: string }) {
+  const [state, action] = useActionState<FormState, FormData>(resetPassword, undefined);
+  return (
+    <form action={action} className="form">
+      <input type="hidden" name="token" value={token} />
+      <div className="field"><label htmlFor="password">New password</label><input type="password" id="password" name="password" autoComplete="new-password" minLength={10} required /><span className="hint">At least 10 characters.</span></div>
+      <div className="field"><label htmlFor="confirm">Type it again</label><input type="password" id="confirm" name="confirm" autoComplete="new-password" minLength={10} required /></div>
+      {state?.error && <ul className="errors" role="alert"><li>{state.error}{state.error.includes("expired") && <> <Link href="/forgot-password">Get a new link</Link></>}</li></ul>}
+      <SubmitButton pendingText="Saving…">Save new password</SubmitButton>
     </form>
   );
 }

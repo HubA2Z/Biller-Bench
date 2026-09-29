@@ -8,17 +8,20 @@ import { PLANS, dollars } from "@/lib/plans";
 import { questionPath } from "@/lib/paths";
 import { timeAgo } from "@/lib/sla";
 import { openBillingPortal } from "@/app/actions/billing";
+import { setEmailNotifications } from "@/app/actions/account";
 import { NpiForm } from "@/components/NpiForm";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Badge, TierChips, slaText } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Your account", robots: { index: false } };
 
-export default async function Account({ searchParams }: { searchParams: Promise<{ welcome?: string; plan?: string }> }) {
+export default async function Account({ searchParams }: { searchParams: Promise<{ welcome?: string; plan?: string; password?: string }> }) {
   const user = await requireUser("/account");
   const sp = await searchParams;
+  const changed = sp.password === "changed" && <div className="phi ok" style={{ marginBottom: 14 }}>Your password is changed. You’ve been signed out on other devices.</div>;
   if (isStaff(user)) {
-    return <div className="card"><h1>{user.name}</h1><p className="muted">Team account{user.credentials ? ` · ${user.credentials}` : ""}.</p><Link className="btn" href="/team">Open team queue</Link></div>;
+    return <>{changed}<div className="card"><div className="form"><h1>{user.name}</h1><p className="muted" style={{ margin: 0 }}>Team account{user.credentials ? ` · ${user.credentials}` : ""}.</p>
+      <EmailToggle on={user.emailNotifications} staff /><div><Link className="btn" href="/team">Open team queue</Link></div></div></div></>;
   }
   const plan = PLANS[user.plan];
   const used = await planQuestionsUsed(user.id);
@@ -26,6 +29,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
 
   return (
     <>
+      {changed}
       {sp.welcome && <div className="phi ok" style={{ marginBottom: 14 }}>Welcome. Verify your NPI below to get the Verified Provider badge, then ask your first question.</div>}
       {sp.plan === "updated" && <div className="phi ok" style={{ marginBottom: 14 }}>Your plan is updated.</div>}
       {sp.plan === "cancelled" && <div className="phi ok" style={{ marginBottom: 14 }}>You’re back on the Free plan.</div>}
@@ -48,6 +52,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
           {user.npiVerifiedAt ? <p className="ok-msg" style={{ margin: 0 }}>Verified · NPI {user.npi}{user.npiNote ? ` · ${user.npiNote}` : ""}</p> : <NpiForm npi={user.npi} />}
         </div></div>
       </div>
+      <div className="card" style={{ marginTop: 14 }}><div className="form"><h2>Email</h2><EmailToggle on={user.emailNotifications} /></div></div>
 
       <section className="section"><h2>Your questions</h2>
         <div className="qlist">
@@ -60,5 +65,16 @@ export default async function Account({ searchParams }: { searchParams: Promise<
         </div>
       </section>
     </>
+  );
+}
+
+function EmailToggle({ on, staff }: { on: boolean; staff?: boolean }) {
+  return (
+    <form action={setEmailNotifications} style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+      <input type="hidden" name="on" value={on ? "false" : "true"} />
+      <span className="small">{staff ? "Alerts for paid questions, asker replies and service requests" : "Emails when our team answers or asks you a follow-up"}: <strong>{on ? "On" : "Off"}</strong></span>
+      <SubmitButton className="btn sm ghost" pendingText="Saving…">{on ? "Turn off" : "Turn on"}</SubmitButton>
+      <span className="hint" style={{ flexBasis: "100%" }}>Emails never include the title of a private question. Password emails are always sent.</span>
+    </form>
   );
 }

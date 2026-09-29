@@ -1,7 +1,7 @@
 /**
  * Pattern scan for patient identifiers. It catches common mistakes; it is not
- * a guarantee. Public posts are blocked on any hit; private posts (covered by
- * a BAA) only get a warning.
+ * a guarantee. BillerBench stores no patient information, so any hit blocks
+ * posting, public or private.
  */
 export type PhiHit = { rule: string; fix: string; samples: string[] };
 

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { inArray, sql } from "drizzle-orm";
+import { and, inArray, isNull, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { formatDuration } from "@/lib/sla";
 import { Badge } from "@/components/ui";
@@ -17,7 +17,7 @@ export default async function Experts() {
     medianMs: sql<number | null>`(select percentile_cont(0.5) within group (order by extract(epoch from (q.first_answered_at - q.created_at)) * 1000)
       from questions q where q.first_answered_at is not null
       and (select a.author_id from answers a where a.question_id = q.id and a.type = 'EXPERT' order by a.created_at limit 1) = ${uid})`,
-  }).from(U).where(inArray(U.role, ["STAFF", "ADMIN"])).orderBy(U.name);
+  }).from(U).where(and(inArray(U.role, ["STAFF", "ADMIN"]), isNull(U.disabledAt))).orderBy(U.name);
 
   return (
     <>

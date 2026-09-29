@@ -13,7 +13,7 @@ const REFS: [string, string][] = [
   ["+ Payer policy", "[Payer policy bulletin](https://)"],
 ];
 
-export function AnswerForm({ questionId, path, staff, isPublic }: { questionId: string; path: string; staff: boolean; isPublic: boolean }) {
+export function AnswerForm({ questionId, path, staff }: { questionId: string; path: string; staff: boolean }) {
   const [state, action] = useActionState<AnswerState, FormData>(postAnswer, undefined);
   const [body, setBody] = useState("");
   const [tab, setTab] = useState<"write" | "preview">("write");
@@ -57,7 +57,7 @@ export function AnswerForm({ questionId, path, staff, isPublic }: { questionId: 
             <div className="preview body" dangerouslySetInnerHTML={{ __html: body.trim() ? renderMarkdown(body) : '<span class="muted">Nothing to preview yet.</span>' }} />
           )}
         </div>
-        <PhiNotice text={body} isPublic={isPublic} />
+        <PhiNotice text={body} />
         {state?.error && <ul className="errors" role="alert"><li>{state.error}</li></ul>}
         <div><SubmitButton pendingText="Posting…">Post {type === "EXPERT" ? "answer" : "follow-up"}</SubmitButton></div>
       </form>

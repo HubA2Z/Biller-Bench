@@ -7,10 +7,12 @@ import type { User } from "@/db/schema";
 import { readSession } from "./session";
 
 export const getCurrentUser = cache(async (): Promise<User | null> => {
-  const id = await readSession();
-  if (!id) return null;
-  const [u] = await db.select().from(schema.users).where(eq(schema.users.id, id)).limit(1);
-  return u ?? null;
+  const s = await readSession();
+  if (!s) return null;
+  const [u] = await db.select().from(schema.users).where(eq(schema.users.id, s.userId)).limit(1);
+  // A password reset bumps sessionVersion, which signs out every older session.
+  if (!u || u.sessionVersion !== s.version || u.disabledAt) return null;
+  return u;
 });
 
 export const isStaff = (u: Pick<User, "role"> | null | undefined) => u?.role === "STAFF" || u?.role === "ADMIN";
@@ -18,6 +20,14 @@ export const isStaff = (u: Pick<User, "role"> | null | undefined) => u?.role ===
 export async function requireUser(next = "/") {
   const u = await getCurrentUser();
   if (!u) redirect(`/login?next=${encodeURIComponent(next)}`);
+  return u;
+}
+
+export const isAdmin = (u: Pick<User, "role"> | null | undefined) => u?.role === "ADMIN";
+
+export async function requireAdmin() {
+  const u = await requireUser("/team/members");
+  if (!isAdmin(u)) redirect("/team");
   return u;
 }
 

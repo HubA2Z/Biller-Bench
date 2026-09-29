@@ -23,7 +23,6 @@ export function AskForm({ plan, planLeft, defaults }: Props) {
   const [group, setGroup] = useState("Medicare");
   const [similar, setSimilar] = useState<{ title: string; href: string }[]>([]);
   const codes = useMemo(() => parseCodes(codesText), [codesText]);
-  const isPublic = tier === "FREE" || publish;
 
   // "Already answered?" suggestions while typing the title.
   useEffect(() => {
@@ -66,7 +65,7 @@ export function AskForm({ plan, planLeft, defaults }: Props) {
 
         <div className="field"><label htmlFor="body">Scenario <span className="req">*</span></label>
           <textarea id="body" name="body" value={body} onChange={(e) => setBody(e.target.value)} placeholder="What was billed, what the payer did (CARC/RARC), and what you've tried." />
-          <PhiNotice text={`${title}\n${body}`} isPublic={isPublic} />
+          <PhiNotice text={`${title}\n${body}`} />
         </div>
 
         <div className="field"><label htmlFor="codes">CPT / HCPCS / ICD-10 codes</label>
@@ -94,14 +93,16 @@ export function AskForm({ plan, planLeft, defaults }: Props) {
             <select id="ehr" name="ehr" defaultValue=""><option value="">Not software-related</option>{EHR_SYSTEMS.map((s) => <option key={s}>{s}</option>)}</select></div>
         </div>
 
-        {isPublic && <label className="ack"><input type="checkbox" name="ack" /><span>I confirm this scenario is strictly abstract and contains <strong>no patient-identifiable data</strong>.</span></label>}
+        <label className="ack"><input type="checkbox" name="ack" /><span>I confirm this scenario is strictly abstract and contains <strong>no patient-identifiable data</strong>.</span></label>
         {state?.errors && <ul className="errors" role="alert">{state.errors.map((e) => <li key={e}>{e}</li>)}</ul>}
         <div><button type="submit" className="btn" disabled={pending}>{pending ? (tier === "URGENT" ? "Opening checkout…" : "Posting…") : tier === "URGENT" ? `Continue to payment · ${dollars(URGENT.priceCents)}` : "Post question"}</button></div>
       </div></form>
 
       <aside className="side">
-        <div className="eyebrow">Public vs private</div>
-        <div className="note">Public questions are scanned and blocked if they contain patient identifiers. Private questions are covered by our BAA, so the scanner only warns.</div>
+        <div className="eyebrow">No patient information</div>
+        <div className="note">Describe the claim scenario, never the patient. Every question is scanned and blocked if it looks like it contains patient identifiers, public or private.</div>
+        <div className="eyebrow" style={{ marginTop: 6 }}>Public vs private</div>
+        <div className="note">Private questions aren’t published. Only you and our team see them, so your practice’s billing problems stay out of public view.</div>
         <div className="eyebrow" style={{ marginTop: 6 }}>The scanner looks for</div>
         <div className="ruleset" style={{ gridTemplateColumns: "1fr" }}>{PHI_RULES.map((r) => <div key={r.name}><b>{r.name}</b></div>)}</div>
       </aside>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { and, asc, desc, eq, gte, isNotNull, isNull, sql, count } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db, schema } from "@/db";
-import { requireStaff } from "@/lib/auth";
+import { isAdmin, requireStaff } from "@/lib/auth";
 import { questionPath } from "@/lib/paths";
 import { PLANS, SERVICES, dollars } from "@/lib/plans";
 import { renderMarkdown } from "@/lib/markdown";
@@ -17,7 +17,7 @@ import { TierChips, slaText } from "@/components/ui";
 export const metadata: Metadata = { title: "Team queue", robots: { index: false } };
 
 export default async function Team() {
-  await requireStaff();
+  const me = await requireStaff();
   const { questions: Q, users: U, answers: A, flags: F, serviceRequests: S } = schema;
   const AQ = alias(Q, "aq");
 
@@ -37,7 +37,9 @@ export default async function Team() {
 
   return (
     <>
-      <div className="pagehead"><span className="eyebrow">Staff view</span><h1>Team queue</h1>
+      <div className="pagehead"><span className="eyebrow">Staff view</span>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}><h1>Team queue</h1>
+          {isAdmin(me) && <Link className="btn sm ghost" href="/team/members">Manage team members</Link>}</div>
         <p className="muted small" style={{ margin: 0 }}>Sorted by due time. Paid questions come first because their clock is shorter.</p></div>
       <div className="ruleset" style={{ marginBottom: 22 }}>
         <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{open.length}</b>open questions{overdue ? <span className="sla late"> · {overdue} overdue</span> : null}</div>
