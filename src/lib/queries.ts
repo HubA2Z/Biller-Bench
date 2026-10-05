@@ -106,3 +106,12 @@ export async function similarQuestions(title: string, codes: string[]) {
     return { q, s };
   }).filter((x) => x.s >= 3).sort((a, b) => b.s - a.s).slice(0, 3).map((x) => x.q);
 }
+
+/** Published updates that cover any of these codes, newest first. */
+export async function relatedUpdates(codes: string[]) {
+  if (!codes.length) return [];
+  const A = schema.articles;
+  return db.select({ slug: A.slug, title: A.title, kind: A.kind }).from(A)
+    .where(and(eq(A.status, "PUBLISHED"), sql`${A.codes} && ARRAY[${sql.join(codes.map((c) => sql`${c}`), sql`, `)}]::text[]`))
+    .orderBy(desc(A.publishedAt)).limit(3);
+}

@@ -6,6 +6,7 @@ export function NavLinks({ staff }: { staff: boolean }) {
   const path = usePathname();
   const items: [string, string][] = [
     ["/", "Questions"],
+    ["/updates", "Updates"],
     ["/ask", "Ask a question"],
     ["/pricing", "Pricing & services"],
     ["/experts", "Our experts"],

@@ -16,6 +16,7 @@ Expert-answered medical billing Q&A for US practices. Providers ask claim, denia
 | Asking | Tags for codes (CPT/HCPCS/ICD-10 validated), modifiers, payer (Medicare by MAC, Medicaid by state, commercial, TRICARE, workers' comp), specialty, state, EHR. "Already answered?" suggestions while typing |
 | Answer speed | Free (public, 3 business days), plan questions (private, quota per month), urgent ($29, 4 business hours). Deadlines count Mon–Fri 9–5 Eastern |
 | No patient information | BillerBench never stores PHI. A scanner for SSN, Medicare ID (MBI), phone, 11-digit claim ID, full dates, addresses, emails and patient names blocks every question and reply, public or private. Every question needs a no-PHI confirmation. Checked in the browser and enforced on the server. "Report PHI" hides a post instantly |
+| Articles and updates | Admins write articles, coding updates and payer updates from **Team queue → Articles and updates**: drafts, preview, publish, unpublish, delete, effective dates, codes, payers, official source link. Public at `/updates` with filters and search, SEO tags and Article structured data, listed in the sitemap, and linked from questions about the same codes and from the home page |
 | Team management | Admins add billers from **Team queue → Manage team members**: name, credentials, role, specialties, payers, software. The biller gets an email to set their own password. Admins can edit, resend invites, and turn accounts off (signs them out at once, keeps their answers) |
 | Question pages | Public: `/q/[code]/[payer]/[slug]` with QAPage structured data, canonical URLs, sitemap, noindex until answered. Private: `/p/[id]`, visible only to the asker and staff |
 | Answers | Staff post expert answers or follow-ups; askers post follow-ups and mark a solution; helpful votes; safe Markdown with LCD/NCD/NCCI link buttons |
@@ -113,6 +114,8 @@ npm run build
 6. Payer and code landing pages (for example "UHC telehealth billing") that collect related answers for SEO.
 
 ## Changelog
+
+**v0.4**: Articles and updates for admins (`/team/updates`, public `/updates`), headings and numbered lists in Markdown. Run `npm run db:migrate`; it adds `drizzle/0003_articles.sql` (the Vercel build command does this automatically).
 
 **v0.3**: no patient information anywhere (private questions and all replies are blocked too), team management page for admins with email invites, turn accounts off. Run `npm run db:migrate`; it adds `drizzle/0002_team_members.sql`.
 

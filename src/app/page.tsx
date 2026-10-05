@@ -6,6 +6,9 @@ import { PLANS } from "@/lib/plans";
 import { questionPath } from "@/lib/paths";
 import { timeAgo } from "@/lib/sla";
 import { AutoSubmitForm } from "@/components/AutoSubmitForm";
+import { desc, eq } from "drizzle-orm";
+import { db, schema } from "@/db";
+import { ARTICLE_KINDS, articlePath } from "@/lib/articles";
 import { QuestionChips, TierChips, slaText } from "@/components/ui";
 
 type SP = Record<string, string | undefined>;
@@ -18,7 +21,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
     status: (["answered", "open", "mine"].includes(sp.status ?? "") ? sp.status : "all") as ListFilters["status"],
     sort: sp.sort === "votes" ? "votes" : "recent", page: Number(sp.page) || 1,
   };
-  const { rows, total, page, pages } = await listQuestions(f, user);
+  const [{ rows, total, page, pages }, latest] = await Promise.all([
+    listQuestions(f, user),
+    db.select().from(schema.articles).where(eq(schema.articles.status, "PUBLISHED")).orderBy(desc(schema.articles.publishedAt)).limit(3),
+  ]);
   const used = user?.role === "PROVIDER" && user.plan !== "FREE" ? await planQuestionsUsed(user.id) : 0;
 
   const link = (patch: SP) => {
@@ -62,6 +68,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
             {active && <Link className="clear" href={f.q ? `/?q=${encodeURIComponent(f.q)}` : "/"}>Clear filters</Link>}
           </div>
         </details>
+        {latest.length > 0 && (
+          <div className="card" style={{ padding: 16 }}>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>Latest updates</div>
+            <div className="mini">{latest.map((a) => <Link key={a.id} href={articlePath(a)}><span className={`kind ${a.kind}`} style={{ marginRight: 6 }}>{ARTICLE_KINDS[a.kind].label}</span>{a.title}</Link>)}</div>
+            <Link className="clear" href="/updates" style={{ display: "inline-block", marginTop: 10 }}>All updates →</Link>
+          </div>
+        )}
       </aside>
 
       <section style={{ minWidth: 0 }}>

@@ -6,14 +6,16 @@ import { renderMarkdown } from "@/lib/markdown";
 import { questionPath } from "@/lib/paths";
 import { URGENT, dollars } from "@/lib/plans";
 import { timeAgo } from "@/lib/sla";
+import { ARTICLE_KINDS } from "@/lib/articles";
 import { acceptAnswer, reportPhi, resumePayment, toggleVote, upgradeQuestion } from "@/app/actions/questions";
 import { AnswerForm } from "./AnswerForm";
 import { SubmitButton } from "./SubmitButton";
 import { Badge, Icon, QuestionChips, TierChips, slaText } from "./ui";
 
 type Data = NonNullable<Awaited<ReturnType<typeof getQuestion>>>;
+type RelatedUpdate = { slug: string; title: string; kind: "ARTICLE" | "CODING_UPDATE" | "PAYER_UPDATE" };
 
-export function QuestionView({ data, user, notice }: { data: Data; user: User | null; notice?: string }) {
+export function QuestionView({ data, user, notice, updates = [] }: { data: Data; user: User | null; notice?: string; updates?: RelatedUpdate[] }) {
   const { q, author, answers, voted } = data;
   const path = questionPath(q);
   const staff = isStaff(user);
@@ -91,6 +93,13 @@ export function QuestionView({ data, user, notice }: { data: Data; user: User | 
           </div>
         );
       })}
+
+      {updates.length > 0 && (
+        <div className="card" style={{ marginTop: 20 }}>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>Related updates</div>
+          <div className="mini">{updates.map((u) => <Link key={u.slug} href={`/updates/${u.slug}`}><span className={`kind ${u.kind}`} style={{ marginRight: 6 }}>{ARTICLE_KINDS[u.kind].label}</span>{u.title}</Link>)}</div>
+        </div>
+      )}
 
       {!staff && expert.length > 0 && (
         <div className="offer">

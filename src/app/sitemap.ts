@@ -16,6 +16,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/`, changeFrequency: "hourly", priority: 1 },
     { url: `${base}/pricing`, changeFrequency: "monthly" },
     { url: `${base}/experts`, changeFrequency: "monthly" },
+    { url: `${base}/updates`, changeFrequency: "daily" },
+    ...(await db.select({ slug: schema.articles.slug, updatedAt: schema.articles.updatedAt }).from(schema.articles)
+      .where(eq(schema.articles.status, "PUBLISHED")).orderBy(desc(schema.articles.updatedAt)).limit(5000))
+      .map((a) => ({ url: `${base}/updates/${a.slug}`, lastModified: a.updatedAt, changeFrequency: "monthly" as const })),
     ...rows.map((q) => ({ url: base + questionPath(q), lastModified: q.updatedAt, changeFrequency: "weekly" as const })),
   ];
 }

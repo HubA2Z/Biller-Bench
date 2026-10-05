@@ -44,3 +44,13 @@ describe("questionPath", () => {
     expect(questionPath({ ...base, isPrivate: true })).toBe("/p/abc");
   });
 });
+
+describe("markdown for articles", () => {
+  it("renders headings and numbered lists safely", () => {
+    const html = renderMarkdown("Intro line\n## What changed\n1. First\n2. Second\n### <b>Note</b>");
+    expect(html).toContain("<h2>What changed</h2>");
+    expect(html).toContain("<ol><li>First</li><li>Second</li></ol>");
+    expect(html).toContain("<h3>&lt;b&gt;Note&lt;/b&gt;</h3>");
+    expect(html).not.toContain("<h1>");
+  });
+});

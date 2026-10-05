@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { schema } from "@/db";
 import { getCurrentUser } from "@/lib/auth";
-import { getQuestion } from "@/lib/queries";
+import { getQuestion, relatedUpdates } from "@/lib/queries";
 import { questionPath } from "@/lib/paths";
 import { QuestionView } from "@/components/QuestionView";
 
@@ -18,5 +18,5 @@ export default async function PrivateQuestion({ params, searchParams }: { params
   if (!data) notFound();
   if (!data.q.isPrivate) redirect(questionPath(data.q));
   const notice = sp.paid ? "Payment received. Your question is in the urgent queue." : sp.payment === "cancelled" ? "Payment was cancelled. You can finish it any time." : undefined;
-  return <QuestionView data={data} user={user} notice={notice} />;
+  return <QuestionView data={data} user={user} notice={notice} updates={await relatedUpdates(data.q.codes)} />;
 }

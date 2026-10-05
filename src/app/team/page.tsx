@@ -39,7 +39,7 @@ export default async function Team() {
     <>
       <div className="pagehead"><span className="eyebrow">Staff view</span>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}><h1>Team queue</h1>
-          {isAdmin(me) && <Link className="btn sm ghost" href="/team/members">Manage team members</Link>}</div>
+          {isAdmin(me) && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="btn sm ghost" href="/team/updates">Articles and updates</Link><Link className="btn sm ghost" href="/team/members">Manage team members</Link></div>}</div>
         <p className="muted small" style={{ margin: 0 }}>Sorted by due time. Paid questions come first because their clock is shorter.</p></div>
       <div className="ruleset" style={{ marginBottom: 22 }}>
         <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{open.length}</b>open questions{overdue ? <span className="sla late"> · {overdue} overdue</span> : null}</div>

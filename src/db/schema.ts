@@ -16,6 +16,8 @@ export const tierEnum = pgEnum("tier", ["FREE", "PLAN", "URGENT"]);
 export const questionStatusEnum = pgEnum("question_status", ["PENDING_PAYMENT", "OPEN", "ANSWERED", "SOLVED"]);
 export const answerTypeEnum = pgEnum("answer_type", ["EXPERT", "FOLLOWUP"]);
 export const flagStatusEnum = pgEnum("flag_status", ["OPEN", "RESTORED", "REMOVED"]);
+export const articleKindEnum = pgEnum("article_kind", ["ARTICLE", "CODING_UPDATE", "PAYER_UPDATE"]);
+export const articleStatusEnum = pgEnum("article_status", ["DRAFT", "PUBLISHED"]);
 export const leadStatusEnum = pgEnum("lead_status", ["NEW", "CONTACTED", "WON", "LOST"]);
 
 export const users = pgTable("users", {
@@ -150,6 +152,30 @@ export const serviceRequests = pgTable("service_requests", {
   updatedAt: updated(),
 }, (t) => [index("service_requests_status_idx").on(t.status)]);
 
+/** Articles, coding updates and payer policy updates written by admins. */
+export const articles = pgTable("articles", {
+  id: id(),
+  slug: text("slug").notNull().unique(),
+  kind: articleKindEnum("kind").notNull().default("ARTICLE"),
+  status: articleStatusEnum("status").notNull().default("DRAFT"),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  body: text("body").notNull(),
+  codes: text("codes").array().notNull().default(sql`'{}'::text[]`),
+  payers: text("payers").array().notNull().default(sql`'{}'::text[]`),
+  specialty: text("specialty"),
+  /** For coding and payer updates: the date the change takes effect. */
+  effectiveDate: timestamp("effective_date", { withTimezone: true }),
+  sourceUrl: text("source_url"),
+  authorId: text("author_id").notNull().references(() => users.id),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  createdAt: created(),
+  updatedAt: updated(),
+}, (t) => [
+  index("articles_status_published_idx").on(t.status, t.publishedAt),
+  index("articles_codes_gin").using("gin", t.codes),
+]);
+
 /** Password reset and team invite links. Only a SHA-256 hash of the token is stored. */
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: id(),
@@ -187,3 +213,4 @@ export type Question = typeof questions.$inferSelect;
 export type Answer = typeof answers.$inferSelect;
 export type Plan = (typeof planEnum.enumValues)[number];
 export type Tier = (typeof tierEnum.enumValues)[number];
+export type Article = typeof articles.$inferSelect;

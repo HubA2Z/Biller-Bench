@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { cache } from "react";
 import { schema } from "@/db";
 import { getCurrentUser } from "@/lib/auth";
-import { getQuestion } from "@/lib/queries";
+import { getQuestion, relatedUpdates } from "@/lib/queries";
 import { questionPath } from "@/lib/paths";
 import { plainText } from "@/lib/markdown";
 import { payerLabel } from "@/lib/taxonomy";
@@ -65,7 +65,7 @@ export default async function PublicQuestion({ params, searchParams }: { params:
   return (
     <>
       {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
-      <QuestionView data={data} user={user} notice={notice} />
+      <QuestionView data={data} user={user} notice={notice} updates={await relatedUpdates(data.q.codes)} />
     </>
   );
 }
