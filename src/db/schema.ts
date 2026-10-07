@@ -176,6 +176,13 @@ export const articles = pgTable("articles", {
   index("articles_codes_gin").using("gin", t.codes),
 ]);
 
+/** Files from content/updates already loaded, so each file is imported once (even if its article is later deleted). */
+export const contentImports = pgTable("content_imports", {
+  file: text("file").primaryKey(),
+  articleId: text("article_id"),
+  importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Password reset and team invite links. Only a SHA-256 hash of the token is stored. */
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: id(),
