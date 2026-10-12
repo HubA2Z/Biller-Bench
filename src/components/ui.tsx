@@ -1,7 +1,6 @@
 import type { Question, User } from "@/db/schema";
 import { classifyCode } from "@/lib/codes";
 import { payerLabel } from "@/lib/taxonomy";
-import { PLANS } from "@/lib/plans";
 import { formatDuration } from "@/lib/sla";
 
 export function Icon({ name }: { name: "up" | "check" | "shield" | "lock" }) {
@@ -26,11 +25,9 @@ export function QuestionChips({ q }: { q: Question }) {
   );
 }
 
-export function TierChips({ q, authorPlan }: { q: Question; authorPlan?: User["plan"] }) {
+export function TierChips({ q }: { q: Question; authorPlan?: User["plan"] }) {
   return (
     <>
-      {q.tier === "URGENT" && <span className="chip urgent">Urgent · 4h</span>}
-      {q.tier === "PLAN" && <span className="chip planchip">{authorPlan ? PLANS[authorPlan].name : "Plan"}</span>}
       {q.isPrivate && <span className="chip private">Private</span>}
     </>
   );
@@ -47,7 +44,6 @@ export function slaText(q: Question, now = new Date()): { text: string; cls: str
   if (q.firstAnsweredAt) return { text: `Answered in ${formatDuration(q.firstAnsweredAt.getTime() - q.createdAt.getTime())}`, cls: "done" };
   if (!q.dueAt) return { text: "Waiting for an answer", cls: "" };
   const left = q.dueAt.getTime() - now.getTime();
-  const prefix = q.tier === "FREE" ? "Free queue · " : "";
-  if (left < 0) return { text: `${prefix}Overdue by ${formatDuration(-left)}`, cls: "late" };
-  return { text: `${prefix}Due in ${formatDuration(left)}`, cls: left < 3600_000 ? "late" : "" };
+  if (left < 0) return { text: `Overdue by ${formatDuration(-left)}`, cls: "late" };
+  return { text: `Due in ${formatDuration(left)}`, cls: left < 3600_000 ? "late" : "" };
 }

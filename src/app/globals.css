@@ -271,3 +271,4 @@ a.qrow{color:inherit;text-decoration:none}
 .mini{display:flex;flex-direction:column;gap:8px}
 .mini a{color:var(--ink);text-decoration:none;font-size:13.5px;line-height:1.35}
 .mini a:hover{color:var(--dropout)}
+.services-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}

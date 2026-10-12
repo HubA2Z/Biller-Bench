@@ -4,10 +4,9 @@ import type { getQuestion } from "@/lib/queries";
 import { isStaff } from "@/lib/auth";
 import { renderMarkdown } from "@/lib/markdown";
 import { questionPath } from "@/lib/paths";
-import { URGENT, dollars } from "@/lib/plans";
 import { timeAgo } from "@/lib/sla";
 import { ARTICLE_KINDS } from "@/lib/articles";
-import { acceptAnswer, reportPhi, resumePayment, toggleVote, upgradeQuestion } from "@/app/actions/questions";
+import { acceptAnswer, reportPhi, toggleVote } from "@/app/actions/questions";
 import { AnswerForm } from "./AnswerForm";
 import { SubmitButton } from "./SubmitButton";
 import { Badge, Icon, QuestionChips, TierChips, slaText } from "./ui";
@@ -42,12 +41,6 @@ export function QuestionView({ data, user, notice, updates = [] }: { data: Data;
             ? <><span style={{ display: "flex", gap: 6, alignItems: "center" }}><Icon name="lock" /><strong>Private</strong></span><span className="muted">Seen only by {isAuthor ? "you" : author.practiceName ?? author.name} and the BillerBench team. It isn’t published.</span></>
             : <span><strong>Public</strong></span>}
           <span className={`sla ${s.cls}`}>{s.text}</span>
-          {isAuthor && q.tier === "FREE" && q.status === "OPEN" && (
-            <form action={upgradeQuestion}><input type="hidden" name="questionId" value={q.id} /><SubmitButton className="btn sm" pendingText="Opening checkout…">Get it answered in 4 hours · {dollars(URGENT.priceCents)}</SubmitButton></form>
-          )}
-          {isAuthor && q.status === "PENDING_PAYMENT" && (
-            <form action={resumePayment}><input type="hidden" name="questionId" value={q.id} /><SubmitButton className="btn sm" pendingText="Opening checkout…">Finish payment to post</SubmitButton></form>
-          )}
         </div>
       </div>
 
@@ -103,10 +96,10 @@ export function QuestionView({ data, user, notice, updates = [] }: { data: Data;
 
       {!staff && expert.length > 0 && (
         <div className="offer">
-          <div><span className="eyebrow">Done for you</span><h3>Have us fix this claim</h3><p>We’ll write the appeal or send a corrected claim for you. Appeals from $49, corrected claims $15.</p>
-            <Link className="btn sm" href={`/pricing?service=appeal&question=${q.id}#request`}>Fix my claim</Link></div>
-          <div><span className="eyebrow">Seeing this often?</span><h3>Get a denial audit</h3><p>We review your last 90 days of denials and send a fix list. $199, credited to your first month if you move billing to us.</p>
-            <Link className="btn sm ghost" href={`/pricing?service=audit&question=${q.id}#request`}>Request an audit</Link></div>
+          <div><span className="eyebrow">Done for you</span><h3>Have us fix this claim</h3><p>We’ll write the appeal or send a corrected claim for you. Tell us about the claim and we’ll send a quote.</p>
+            <Link className="btn sm" href={`/services?service=appeal&question=${q.id}#request`}>Fix my claim</Link></div>
+          <div><span className="eyebrow">Seeing this often?</span><h3>Get a denial audit</h3><p>We review your recent denials and send a fix list, so the same denial stops coming back.</p>
+            <Link className="btn sm ghost" href={`/services?service=audit&question=${q.id}#request`}>Request an audit</Link></div>
         </div>
       )}
 

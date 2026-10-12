@@ -1,49 +1,25 @@
-import type { Plan } from "@/db/schema";
+/** BillerBench is free for providers. Revenue comes from billing services. */
 
-export type PlanInfo = {
-  key: Plan;
-  name: string;
-  priceCents: number;
-  /** Private questions included per calendar month. */
-  quota: number;
-  /** Business hours until an answer is due. */
-  slaBusinessHours: number;
-  slaLabel: string;
-  points: string[];
-  stripePriceEnv?: string;
-};
+/** Every question is answered within this many business hours (Mon–Fri, 9–5 Eastern). */
+export const ANSWER_TIME = { slaBusinessHours: 8, label: "1 business day" };
 
-export const PLANS: Record<Plan, PlanInfo> = {
-  FREE: {
-    key: "FREE", name: "Free", priceCents: 0, quota: 0, slaBusinessHours: 24, slaLabel: "2–3 business days",
-    points: ["Public questions", "Answered by our certified team", "Answers become public pages"],
-  },
-  BASIC: {
-    key: "BASIC", name: "Practice Basic", priceCents: 4900, quota: 5, slaBusinessHours: 8, slaLabel: "Next business day",
-    points: ["5 private questions a month", "Answers by the next business day", "Private or public, your choice"],
-    stripePriceEnv: "STRIPE_PRICE_BASIC",
-  },
-  PRO: {
-    key: "PRO", name: "Practice Pro", priceCents: 14900, quota: 20, slaBusinessHours: 4, slaLabel: "4 business hours",
-    points: ["20 private questions a month", "Answers within 4 business hours", "One 30-minute call a month"],
-    stripePriceEnv: "STRIPE_PRICE_PRO",
-  },
-  DEDICATED: {
-    key: "DEDICATED", name: "Dedicated Biller", priceCents: 29900, quota: 200, slaBusinessHours: 4, slaLabel: "Same business day",
-    points: ["A named biller for your practice", "Knows your payers and software", "Fair-use unlimited questions"],
-    stripePriceEnv: "STRIPE_PRICE_DEDICATED",
-  },
-};
+export type Service = { id: string; name: string; desc: string; points: string[] };
 
-export const URGENT = { priceCents: 2900, slaBusinessHours: 4, slaLabel: "4 business hours" };
-
-export const SERVICES = [
-  { id: "appeal", name: "Appeal letter", desc: "We write the appeal or redetermination request with citations.", price: "$49 per appeal" },
-  { id: "corrected", name: "Corrected claim", desc: "We fix and resubmit a denied or rejected claim.", price: "$15 per claim" },
-  { id: "audit", name: "Denial audit", desc: "Review of your last 90 days of denials with a fix list.", price: "$199, credited if you switch" },
-  { id: "ar", name: "Old AR recovery", desc: "We work unpaid claims older than 90 days.", price: "25% of recovered" },
-  { id: "rcm", name: "Full billing service", desc: "We run your billing end to end.", price: "From 5% of collections" },
-  { id: "cred", name: "Payer credentialing", desc: "Enrollment and re-credentialing with payers.", price: "$150 per payer" },
-] as const;
-
-export const dollars = (cents: number) => `$${(cents / 100).toFixed(cents % 100 ? 2 : 0)}`;
+export const SERVICES: Service[] = [
+  { id: "rcm", name: "Full billing service", desc: "We run your billing end to end so your team can focus on patients.",
+    points: ["Charge entry and claim submission", "Payment posting and denial follow-up", "Monthly reports on collections"] },
+  { id: "eligibility", name: "Eligibility verification", desc: "We check coverage and benefits before visits to prevent denials.",
+    points: ["Active coverage and plan details", "Copay, deductible and coinsurance", "Referral and authorization requirements"] },
+  { id: "prior-auth", name: "Prior authorization", desc: "We request and track prior authorizations with payers.",
+    points: ["Submission with clinical documentation", "Follow-up until a decision", "Appeals for denied authorizations"] },
+  { id: "appeal", name: "Appeals", desc: "We write appeals and redetermination requests with the policy citations payers expect.",
+    points: ["Medicare redeterminations and reconsiderations", "Commercial payer appeals", "Tracking to resolution"] },
+  { id: "corrected", name: "Corrected claims", desc: "We fix and resubmit denied or rejected claims.",
+    points: ["Coding and modifier corrections", "Clearinghouse rejections", "Resubmission and follow-up"] },
+  { id: "audit", name: "Denial audit", desc: "We review your recent denials and give you a fix list.",
+    points: ["Top denial reasons by payer", "Root causes and fixes", "Quick-win recovery list"] },
+  { id: "ar", name: "Old AR recovery", desc: "We work unpaid claims older than 90 days.",
+    points: ["Payer calls and portal follow-up", "Appeals where needed", "Write-off recommendations"] },
+  { id: "cred", name: "Payer credentialing", desc: "We handle payer enrollment and re-credentialing.",
+    points: ["New payer enrollment", "CAQH and revalidations", "Status tracking"] },
+];

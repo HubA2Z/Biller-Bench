@@ -8,7 +8,7 @@ import { getCurrentUser, isAdmin } from "@/lib/auth";
 import { ARTICLE_KINDS, articlePath, formatDate } from "@/lib/articles";
 import { renderMarkdown } from "@/lib/markdown";
 import { questionPath } from "@/lib/paths";
-import { appUrl } from "@/lib/stripe";
+import { appUrl } from "@/lib/site";
 
 const load = cache(async (slug: string) => {
   const user = await getCurrentUser();
@@ -76,8 +76,8 @@ export default async function UpdatePage({ params, searchParams }: { params: Pro
         <div className="body" dangerouslySetInnerHTML={{ __html: renderMarkdown(a.body) }} />
         {a.sourceUrl && <p className="small" style={{ marginTop: 18 }}>Official source: <a href={a.sourceUrl} target="_blank" rel="noopener nofollow">{a.sourceUrl.replace(/^https:\/\//, "").slice(0, 70)}</a></p>}
         <div className="offer">
-          <div><span className="eyebrow">Question about this change?</span><h3>Ask our certified billers</h3><p>Free public answers in 2–3 business days, or private answers in 4 hours.</p><Link className="btn sm" href="/ask">Ask a question</Link></div>
-          <div><span className="eyebrow">Want it handled?</span><h3>Let us update your billing</h3><p>We can review your claims for this change and fix denials.</p><Link className="btn sm ghost" href="/pricing?service=audit#request">Request a review</Link></div>
+          <div><span className="eyebrow">Question about this change?</span><h3>Ask our certified billers</h3><p>Free for providers. A certified biller answers within 1 business day.</p><Link className="btn sm" href="/ask">Ask a question</Link></div>
+          <div><span className="eyebrow">Want it handled?</span><h3>Let us update your billing</h3><p>We can review your claims for this change and fix denials.</p><Link className="btn sm ghost" href="/services?service=audit#request">Request a review</Link></div>
         </div>
       </article>
       <aside className="side">

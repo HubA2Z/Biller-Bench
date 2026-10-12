@@ -4,19 +4,14 @@ import { createQuestion, type AskState } from "@/app/actions/questions";
 import { classifyCode, parseCodes } from "@/lib/codes";
 import { EHR_SYSTEMS, MODIFIERS, PAYER_GROUPS, SPECIALTIES, STATES } from "@/lib/taxonomy";
 import { PHI_RULES } from "@/lib/phi";
-import { URGENT, dollars } from "@/lib/plans";
+import { ANSWER_TIME } from "@/lib/plans";
 import { PhiNotice } from "./PhiNotice";
 
-type Props = {
-  plan: { key: string; name: string; quota: number; slaLabel: string };
-  planLeft: number;
-  defaults: { state: string; specialty: string };
-};
+type Props = { defaults: { state: string; specialty: string } };
 
-export function AskForm({ plan, planLeft, defaults }: Props) {
+export function AskForm({ defaults }: Props) {
   const [state, action, pending] = useActionState<AskState, FormData>(createQuestion, undefined);
-  const [tier, setTier] = useState(planLeft > 0 ? "PLAN" : "FREE");
-  const [publish, setPublish] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [codesText, setCodesText] = useState("");
@@ -44,19 +39,7 @@ export function AskForm({ plan, planLeft, defaults }: Props) {
         const fd = new FormData(e.currentTarget);
         startTransition(() => action(fd));
       }}><div className="form">
-        <div className="field"><span className="lbl">How fast do you need an answer? <span className="req">*</span></span>
-          <div className="typepick">
-            <label><input type="radio" name="tier" value="FREE" checked={tier === "FREE"} onChange={() => setTier("FREE")} /><span><strong>Free · public</strong><br /><span className="muted">Answered within 2–3 business days. The answer becomes a public page.</span></span></label>
-            {plan.key !== "FREE" && (
-              <label className={planLeft ? "" : "off"}><input type="radio" name="tier" value="PLAN" checked={tier === "PLAN"} disabled={!planLeft} onChange={() => setTier("PLAN")} /><span><strong>{plan.name} · private</strong><br /><span className="muted">{plan.slaLabel}. {planLeft} of {plan.quota} left this month.</span></span></label>
-            )}
-            <label><input type="radio" name="tier" value="URGENT" checked={tier === "URGENT"} onChange={() => setTier("URGENT")} /><span><strong>Urgent · private · {dollars(URGENT.priceCents)}</strong><br /><span className="muted">Answered within 4 business hours. One-time payment.</span></span></label>
-          </div>
-          {tier !== "FREE" && (
-            <label className="ack" style={{ marginTop: 6 }}><input type="checkbox" name="publish" checked={publish} onChange={(e) => setPublish(e.target.checked)} /><span>Also publish the answer publicly with identifiers removed, so other practices can find it.</span></label>
-          )}
-        </div>
-
+        <div className="banner"><strong>Free</strong><span className="muted">Answered by a certified biller within {ANSWER_TIME.label}.</span></div>
         <div className="field"><label htmlFor="title">Title <span className="req">*</span></label>
           <input type="text" id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} placeholder="e.g. Why is 99214 denying with modifier 25 on Novitas Medicare?" />
           <span className="hint">Lead with the code and the payer.</span>
@@ -93,9 +76,10 @@ export function AskForm({ plan, planLeft, defaults }: Props) {
             <select id="ehr" name="ehr" defaultValue=""><option value="">Not software-related</option>{EHR_SYSTEMS.map((s) => <option key={s}>{s}</option>)}</select></div>
         </div>
 
+        <label className="ack"><input type="checkbox" name="private" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} /><span><strong>Keep this question private.</strong> Only you and our team will see it. Leave unticked to publish it, so other practices can find the answer.</span></label>
         <label className="ack"><input type="checkbox" name="ack" /><span>I confirm this scenario is strictly abstract and contains <strong>no patient-identifiable data</strong>.</span></label>
         {state?.errors && <ul className="errors" role="alert">{state.errors.map((e) => <li key={e}>{e}</li>)}</ul>}
-        <div><button type="submit" className="btn" disabled={pending}>{pending ? (tier === "URGENT" ? "Opening checkout…" : "Posting…") : tier === "URGENT" ? `Continue to payment · ${dollars(URGENT.priceCents)}` : "Post question"}</button></div>
+        <div><button type="submit" className="btn" disabled={pending}>{pending ? "Posting…" : isPrivate ? "Post private question" : "Post question"}</button></div>
       </div></form>
 
       <aside className="side">

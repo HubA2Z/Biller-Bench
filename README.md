@@ -1,6 +1,6 @@
 # BillerBench
 
-Expert-answered medical billing Q&A for US practices. Providers ask claim, denial, CPT/ICD-10 and modifier questions; your in-house certified billers answer. Free public answers build search traffic; paid plans and urgent questions give private, faster answers; every answer page offers done-for-you billing services.
+Expert-answered medical billing Q&A for US practices. Providers ask claim, denial, CPT/ICD-10 and modifier questions for free; your in-house certified billers answer within one business day. Revenue comes from billing services (full billing, eligibility, prior auth, appeals, audits, AR recovery, credentialing), requested through the Billing services page and offered on every answered question.
 
 "BillerBench" is a working name. Change it in `src/app/layout.tsx` and the page copy.
 
@@ -10,19 +10,19 @@ Expert-answered medical billing Q&A for US practices. Providers ask claim, denia
 |---|---|
 | Accounts | Email + password sign-up for providers, signed session cookie, roles: Provider, Staff, Admin |
 | Password reset | One-hour, single-use links (only a hash is stored). Resetting signs the account out on every other device and sends a "password changed" email |
-| Email notifications | Asker: expert answer, team follow-up. Team: new paid or plan question, asker reply, new service request. Private question titles never appear in emails. Each user can turn notifications off |
+| Email notifications | Asker: expert answer, team follow-up. Team: every new question (with its due time), asker reply, new service request. Private question titles never appear in emails. Each user can turn notifications off |
 | Rate limits | Login (per IP and per email), sign-up, reset requests, asking, replies, votes, PHI reports, service requests, NPI checks, suggestions. Stored in PostgreSQL, so it works across servers |
 | NPI verification | Check-digit test, live lookup in the CMS NPPES Registry, auto-verify only when the registry name matches the account, otherwise staff review |
 | Asking | Tags for codes (CPT/HCPCS/ICD-10 validated), modifiers, payer (Medicare by MAC, Medicaid by state, commercial, TRICARE, workers' comp), specialty, state, EHR. "Already answered?" suggestions while typing |
-| Answer speed | Free (public, 3 business days), plan questions (private, quota per month), urgent ($29, 4 business hours). Deadlines count Mon–Fri 9–5 Eastern |
+| Answer speed | Free for all providers, unlimited. Every question is due within 1 business day (Mon–Fri 9–5 Eastern), public or private (provider's choice) |
 | No patient information | BillerBench never stores PHI. A scanner for SSN, Medicare ID (MBI), phone, 11-digit claim ID, full dates, addresses, emails and patient names blocks every question and reply, public or private. Every question needs a no-PHI confirmation. Checked in the browser and enforced on the server. "Report PHI" hides a post instantly |
 | Articles and updates | Admins write articles, coding updates and payer updates from **Team queue → Articles and updates**: drafts, preview, publish, unpublish, delete, effective dates, codes, payers, official source link. Public at `/updates` with filters and search, SEO tags and Article structured data, listed in the sitemap, and linked from questions about the same codes and from the home page |
 | Update inbox | Markdown files committed to `content/updates/` are loaded as drafts on each deploy (once per file, validated for codes, payers and patient details). Used by the weekly scheduled task. See `content/updates/README.md` |
 | Team management | Admins add billers from **Team queue → Manage team members**: name, credentials, role, specialties, payers, software. The biller gets an email to set their own password. Admins can edit, resend invites, and turn accounts off (signs them out at once, keeps their answers) |
 | Question pages | Public: `/q/[code]/[payer]/[slug]` with QAPage structured data, canonical URLs, sitemap, noindex until answered. Private: `/p/[id]`, visible only to the asker and staff |
 | Answers | Staff post expert answers or follow-ups; askers post follow-ups and mark a solution; helpful votes; safe Markdown with LCD/NCD/NCCI link buttons |
-| Money | Stripe Checkout for plans (subscriptions) and urgent questions (one-time), webhook, billing portal. Service request form (appeals, audits, AR recovery, full billing) on every answered question |
-| Team queue | Open questions by due time, overdue count, plan revenue, service requests (contacted/won/lost), PHI reports (restore/remove), NPI review |
+| Billing services | `/services`: 8 services with quote requests (no prices shown). Requests land in the team queue and email the team; providers see their requests on their account page. `/pricing` redirects here |
+| Team queue | Open questions by due time, overdue count, questions this month, provider accounts, service requests (contacted/won/lost), PHI reports (restore/remove), NPI review |
 
 ## Run it locally
 
@@ -40,9 +40,7 @@ npm run dev                     # http://localhost:3000
 Sample logins after seeding:
 
 - Team: `marcus@billerbench.test`, `denise@billerbench.test` (admin), `tom@billerbench.test`, password from `SEED_STAFF_PASSWORD`
-- Providers: `priya@example.test` (Basic plan), `linda@example.test` (Pro), `ray@example.test` (Free), password `provider-demo-1`
-
-With `DEV_FAKE_PAYMENTS=true` and `APP_URL` on localhost, checkouts succeed without Stripe so you can test the whole flow.
+- Providers: `priya@example.test`, `linda@example.test`, `ray@example.test`, password `provider-demo-1`
 
 Create the first admin (you) once from the command line:
 
@@ -64,14 +62,9 @@ Without `RESEND_API_KEY`, emails are printed to the server log, which is handy f
 
 Limits live in `src/lib/rate-limit.ts` (`LIMITS`). Per-IP limits read the first `X-Forwarded-For` address, which is correct behind Vercel, Render or a load balancer. If the app is reached directly with no proxy, set `TRUST_PROXY=false`; per-IP limits are then skipped and per-account limits still apply.
 
-## Stripe setup
+## Answer time and services
 
-1. Create three recurring monthly prices in Stripe (Basic $49, Pro $149, Dedicated $299) and put their IDs in `STRIPE_PRICE_BASIC`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_DEDICATED`.
-2. Set `STRIPE_SECRET_KEY` and set `DEV_FAKE_PAYMENTS=false`.
-3. Add a webhook endpoint at `https://YOUR_DOMAIN/api/stripe/webhook` for `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Put its signing secret in `STRIPE_WEBHOOK_SECRET`.
-4. Turn on the Customer Portal in Stripe settings so customers can switch or cancel plans.
-
-Prices and plan limits live in `src/lib/plans.ts`.
+The answer-time promise and the list of billing services live in `src/lib/plans.ts`.
 
 ## Deploy
 
@@ -91,7 +84,7 @@ src/app/            pages and routes (App Router)
 src/app/actions/    server actions: auth, questions, answers, billing, leads, team, account
 src/components/     UI (AskForm, AnswerForm, QuestionView, …)
 src/db/             Drizzle schema and client
-src/lib/            PHI scanner, codes, NPI, business-hours SLA, plans, markdown, queries
+src/lib/            PHI scanner, codes, NPI, business-hours SLA, services, markdown, queries
 drizzle/            SQL migrations (npm run db:generate after schema changes)
 scripts/            migrate, seed, make-staff
 tests/              unit tests (npm test)
@@ -115,6 +108,8 @@ npm run build
 6. Payer and code landing pages (for example "UHC telehealth billing") that collect related answers for SEO.
 
 ## Changelog
+
+**v0.6**: free for all providers. Removed paid plans, urgent questions and Stripe; every question is due within 1 business day, public or private. New Billing services page (`/services`, 8 services incl. eligibility verification and prior authorization, quote requests, no prices); `/pricing` redirects there. Team gets an email for every new question. No database migration needed.
 
 **v0.5**: update inbox: `content/updates/*.md` files become draft updates on deploy (`scripts/import-content.ts`, run by `npm run db:migrate`). Optional settings `CONTENT_AUTHOR_EMAIL` and `CONTENT_AUTOPUBLISH`. Adds `drizzle/0004_content_imports.sql`.
 

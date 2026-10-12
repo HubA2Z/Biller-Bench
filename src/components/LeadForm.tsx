@@ -17,7 +17,7 @@ export function LeadForm(p: Props) {
       {p.questionId && <><input type="hidden" name="questionId" value={p.questionId} /><div className="banner small">About: <strong>{p.questionTitle}</strong></div></>}
       <div className="row2">
         <div className="field"><label htmlFor="service">Service <span className="req">*</span></label>
-          <select id="service" name="service" defaultValue={p.service ?? "audit"}>{SERVICES.map((s) => <option key={s.id} value={s.id}>{s.name} · {s.price}</option>)}</select></div>
+          <select id="service" name="service" defaultValue={p.service ?? "rcm"}>{SERVICES.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
         <div className="field"><label htmlFor="practiceName">Practice name <span className="req">*</span></label><input type="text" id="practiceName" name="practiceName" defaultValue={p.practiceName} required /></div>
       </div>
       <div className="row2">

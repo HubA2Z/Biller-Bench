@@ -10,13 +10,10 @@ import { getCurrentUser, isStaff, requireUser } from "@/lib/auth";
 import { scanPHI } from "@/lib/phi";
 import { classifyCode, parseCodes } from "@/lib/codes";
 import { EHR_SYSTEMS, MODIFIERS, SPECIALTIES, STATES, isValidPayer } from "@/lib/taxonomy";
-import { PLANS, URGENT } from "@/lib/plans";
+import { ANSWER_TIME } from "@/lib/plans";
 import { addBusinessHours } from "@/lib/sla";
 import { slugify } from "@/lib/slug";
 import { questionPath } from "@/lib/paths";
-import { planQuestionsUsed } from "@/lib/queries";
-import { appUrl, fakePayments, stripe } from "@/lib/stripe";
-import { finalizeUrgentPayment } from "@/lib/payments";
 import { LIMITS, hit, waitMessage } from "@/lib/rate-limit";
 import { notifyStaffOfQuestion } from "@/lib/notify";
 
@@ -25,8 +22,7 @@ const { questions: Q, answers: A, votes: V, flags: F } = schema;
 export type AskState = { errors?: string[] } | undefined;
 
 const askSchema = z.object({
-  tier: z.enum(["FREE", "PLAN", "URGENT"]),
-  publish: z.boolean(),
+  private: z.boolean(),
   title: z.string().trim().min(15, "Write a title of at least 15 characters.").max(200, "Keep the title under 200 characters."),
   body: z.string().trim().min(30, "Describe the scenario in at least 30 characters.").max(10000),
   codes: z.string(),
@@ -45,7 +41,7 @@ export async function createQuestion(_: AskState, form: FormData): Promise<AskSt
   const limit = await hit(`ask:user:${user.id}`, LIMITS.askUser);
   if (!limit.ok) return { errors: [waitMessage(limit)] };
   const parsed = askSchema.safeParse({
-    tier: form.get("tier"), publish: form.get("publish") === "on",
+    private: form.get("private") === "on",
     title: form.get("title") ?? "", body: form.get("body") ?? "", codes: form.get("codes") ?? "",
     modifiers: form.getAll("modifiers"), payerGroup: form.get("payerGroup") ?? "", payerName: form.get("payerName") ?? "",
     state: form.get("state") ?? "", specialty: form.get("specialty") ?? "", ehr: form.get("ehr") ?? "", ack: form.get("ack") === "on",
@@ -62,68 +58,21 @@ export async function createQuestion(_: AskState, form: FormData): Promise<AskSt
   if (!(SPECIALTIES as readonly string[]).includes(d.specialty)) errors.push("Choose a specialty.");
   if (d.ehr && !(EHR_SYSTEMS as readonly string[]).includes(d.ehr)) errors.push("Choose a listed EHR, or none.");
 
-  const plan = PLANS[user.plan];
-  if (d.tier === "PLAN") {
-    if (user.plan === "FREE") errors.push("Your account doesn't have a plan. Choose Free or Urgent.");
-    else if ((await planQuestionsUsed(user.id)) >= plan.quota) errors.push(`You've used all ${plan.quota} plan questions this month. Choose Free or Urgent.`);
-  }
-  const isPublic = d.tier === "FREE" || d.publish;
   if (scanPHI(`${d.title}\n${d.body}`).length) errors.push("Remove the possible patient identifiers flagged above. BillerBench never stores patient information.");
   if (!d.ack) errors.push("Confirm the scenario contains no patient-identifiable data.");
   if (errors.length) return { errors };
 
-  const now = new Date();
-  const slaHours = d.tier === "URGENT" ? URGENT.slaBusinessHours : d.tier === "PLAN" ? plan.slaBusinessHours : PLANS.FREE.slaBusinessHours;
   const slug = `${slugify(d.title, 70)}-${randomBytes(3).toString("hex")}`;
   const [q] = await db.insert(Q).values({
     slug, title: d.title, body: d.body, authorId: user.id, codes, modifiers: d.modifiers,
     payerGroup: d.payerGroup, payerName: d.payerName, state: d.state, specialty: d.specialty, ehr: d.ehr || null,
-    tier: d.tier, isPrivate: !isPublic, status: d.tier === "URGENT" ? "PENDING_PAYMENT" : "OPEN",
-    dueAt: d.tier === "URGENT" ? null : addBusinessHours(now, slaHours),
+    tier: "FREE", isPrivate: d.private, status: "OPEN",
+    dueAt: addBusinessHours(new Date(), ANSWER_TIME.slaBusinessHours),
   }).returning();
 
-  if (d.tier === "URGENT") {
-    const url = await urgentCheckoutUrl(q.id, user, "Urgent question: answer within 4 business hours");
-    redirect(url);
-  }
   after(() => notifyStaffOfQuestion(q, "new"));
   revalidatePath("/");
   redirect(questionPath(q));
-}
-
-async function urgentCheckoutUrl(questionId: string, user: { id: string; email: string; stripeCustomerId: string | null }, label: string) {
-  const [q] = await db.select().from(Q).where(eq(Q.id, questionId));
-  if (fakePayments()) {
-    await finalizeUrgentPayment(questionId, null);
-    return questionPath(q) + "?paid=1";
-  }
-  const session = await stripe().checkout.sessions.create({
-    mode: "payment",
-    ...(user.stripeCustomerId ? { customer: user.stripeCustomerId } : { customer_email: user.email }),
-    line_items: [{ quantity: 1, price_data: { currency: "usd", unit_amount: URGENT.priceCents, product_data: { name: label } } }],
-    metadata: { kind: "urgent", questionId, userId: user.id },
-    success_url: `${appUrl()}/checkout/done?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl()}${questionPath(q)}?payment=cancelled`,
-  });
-  return session.url!;
-}
-
-/** Pays to move a free question to the 4-hour urgent queue. */
-export async function upgradeQuestion(form: FormData) {
-  const user = await requireUser();
-  const id = String(form.get("questionId"));
-  const [q] = await db.select().from(Q).where(and(eq(Q.id, id), eq(Q.authorId, user.id)));
-  if (!q || q.tier !== "FREE" || q.status !== "OPEN") redirect("/");
-  redirect(await urgentCheckoutUrl(q.id, user, "Upgrade to urgent: answer within 4 business hours"));
-}
-
-/** Resumes payment for an urgent question whose checkout was abandoned. */
-export async function resumePayment(form: FormData) {
-  const user = await requireUser();
-  const id = String(form.get("questionId"));
-  const [q] = await db.select().from(Q).where(and(eq(Q.id, id), eq(Q.authorId, user.id), eq(Q.status, "PENDING_PAYMENT")));
-  if (!q) redirect("/");
-  redirect(await urgentCheckoutUrl(q.id, user, "Urgent question: answer within 4 business hours"));
 }
 
 export async function toggleVote(form: FormData) {

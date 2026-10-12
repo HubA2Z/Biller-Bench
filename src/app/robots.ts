@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { appUrl } from "@/lib/stripe";
+import { appUrl } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {

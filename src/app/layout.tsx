@@ -4,7 +4,7 @@ import "./globals.css";
 import { getCurrentUser, isStaff } from "@/lib/auth";
 import { logout } from "./actions/auth";
 import { NavLinks } from "@/components/NavLinks";
-import { appUrl } from "@/lib/stripe";
+import { appUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl()),

@@ -8,7 +8,7 @@ export function NavLinks({ staff }: { staff: boolean }) {
     ["/", "Questions"],
     ["/updates", "Updates"],
     ["/ask", "Ask a question"],
-    ["/pricing", "Pricing & services"],
+    ["/services", "Billing services"],
     ["/experts", "Our experts"],
     ...(staff ? ([["/team", "Team queue"]] as [string, string][]) : []),
   ];

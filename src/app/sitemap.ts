@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { and, desc, eq, ne } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { questionPath } from "@/lib/paths";
-import { appUrl } from "@/lib/stripe";
+import { appUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = appUrl();
   return [
     { url: `${base}/`, changeFrequency: "hourly", priority: 1 },
-    { url: `${base}/pricing`, changeFrequency: "monthly" },
+    { url: `${base}/services`, changeFrequency: "monthly" },
     { url: `${base}/experts`, changeFrequency: "monthly" },
     { url: `${base}/updates`, changeFrequency: "daily" },
     ...(await db.select({ slug: schema.articles.slug, updatedAt: schema.articles.updatedAt }).from(schema.articles)

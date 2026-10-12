@@ -2,7 +2,7 @@ import "server-only";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "@/db";
 import type { Question } from "@/db/schema";
-import { appUrl } from "./stripe";
+import { appUrl } from "./site";
 import { questionPath } from "./paths";
 import { sendEmailSafe } from "./email";
 import { SERVICES } from "./plans";
@@ -41,16 +41,15 @@ export async function notifyAskerOfReply(q: Question, type: "EXPERT" | "FOLLOWUP
 
 /** Tell the team a paid question is waiting, or that an asker replied. */
 export async function notifyStaffOfQuestion(q: Question, event: "new" | "followup") {
-  if (event === "new" && q.tier === "FREE") return; // free questions are picked up from the queue
   const to = await staffEmails();
   if (!to.length) return;
   const due = q.dueAt ? q.dueAt.toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" }) + " ET" : "soon";
-  const kind = q.tier === "URGENT" ? "Urgent" : q.tier === "PLAN" ? "Plan" : "Free";
+  const visibility = q.isPrivate ? "Private" : "Public";
   await sendEmailSafe({
     to,
-    subject: event === "new" ? `[${kind}] New question due ${due}` : `Asker replied: ${q.isPrivate ? "private question" : q.title}`.slice(0, 120),
+    subject: event === "new" ? `[New question] due ${due}` : `Asker replied: ${q.isPrivate ? "private question" : q.title}`.slice(0, 120),
     text: event === "new"
-      ? `A ${kind.toLowerCase()} question is in the queue, due ${due}.\n\n${q.payerGroup} · ${q.payerName} · ${q.specialty}\n\nOpen it: ${link(q)}`
+      ? `A new ${visibility.toLowerCase()} question is in the queue, due ${due}.\n\n${q.payerGroup} · ${q.payerName} · ${q.specialty}\n\nOpen it: ${link(q)}`
       : `The asker added a follow-up. Open the question: ${link(q)}`,
   });
 }

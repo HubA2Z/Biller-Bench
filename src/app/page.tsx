@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { listQuestions, planQuestionsUsed, type ListFilters } from "@/lib/queries";
+import { listQuestions, type ListFilters } from "@/lib/queries";
 import { PAYER_GROUPS, SPECIALTIES, STATES } from "@/lib/taxonomy";
-import { PLANS } from "@/lib/plans";
+import { ANSWER_TIME } from "@/lib/plans";
 import { questionPath } from "@/lib/paths";
 import { timeAgo } from "@/lib/sla";
 import { AutoSubmitForm } from "@/components/AutoSubmitForm";
@@ -25,7 +25,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
     listQuestions(f, user),
     db.select().from(schema.articles).where(eq(schema.articles.status, "PUBLISHED")).orderBy(desc(schema.articles.publishedAt)).limit(3),
   ]);
-  const used = user?.role === "PROVIDER" && user.plan !== "FREE" ? await planQuestionsUsed(user.id) : 0;
 
   const link = (patch: SP) => {
     const merged: SP = { ...sp, page: undefined, ...patch };
@@ -78,12 +77,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
       </aside>
 
       <section style={{ minWidth: 0 }}>
-        {user?.role === "PROVIDER" && (
+        {user?.role !== "STAFF" && user?.role !== "ADMIN" && (
           <div className="banner" style={{ marginBottom: 14 }}>
-            <span><strong>{PLANS[user.plan].name}</strong> plan</span>
-            {user.plan === "FREE"
-              ? <><span className="muted">Free questions are public and answered in 2–3 business days.</span><Link className="clear" href="/pricing">Get private answers in 4 hours →</Link></>
-              : <span className="quota">{Math.max(0, PLANS[user.plan].quota - used)} of {PLANS[user.plan].quota} private questions left this month · {PLANS[user.plan].slaLabel}</span>}
+            <span><strong>Free for providers</strong></span>
+            <span className="muted">Certified billers answer within {ANSWER_TIME.label}, public or private.</span>
+            <Link className="clear" href="/services">Need billing help? See our services →</Link>
           </div>
         )}
         <form className="searchbar" method="get">
