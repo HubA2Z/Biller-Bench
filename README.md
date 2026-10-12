@@ -22,6 +22,7 @@ Expert-answered medical billing Q&A for US practices. Providers ask claim, denia
 | Question pages | Public: `/q/[code]/[payer]/[slug]` with QAPage structured data, canonical URLs, sitemap, noindex until answered. Private: `/p/[id]`, visible only to the asker and staff |
 | Answers | Staff post expert answers or follow-ups; askers post follow-ups and mark a solution; helpful votes; safe Markdown with LCD/NCD/NCCI link buttons |
 | Billing services | `/services`: 8 services with quote requests (no prices shown). Requests land in the team queue and email the team; providers see their requests on their account page. `/pricing` redirects here |
+| Company pages | `/about` (mission, values, how it works), `/careers` (roles and an application form), `/contact` (contact form, plus email, phone, address and hours from settings). Messages and applications are checked for patient details, rate limited, emailed to the team and listed in the team queue (mark reviewed or archive). Footer links on every page |
 | Team queue | Open questions by due time, overdue count, questions this month, provider accounts, service requests (contacted/won/lost), PHI reports (restore/remove), NPI review |
 
 ## Run it locally
@@ -57,6 +58,15 @@ It prints a temporary password. Sign in, change it with "Forgot your password?",
 3. Optional: set `STAFF_ALERT_EMAILS` to send team alerts to a shared inbox instead of every team member.
 
 Without `RESEND_API_KEY`, emails are printed to the server log, which is handy for testing reset links locally.
+
+## Contact details
+
+The Contact page shows these only when set (in Vercel: Settings → Environment Variables), so you can change them without touching code:
+
+- `CONTACT_EMAIL`, `CONTACT_PHONE`, `CONTACT_ADDRESS`
+- `CONTACT_HOURS` (default "Monday to Friday, 9am–5pm US Eastern")
+
+The mission statement, contact topics and career roles live in `src/lib/company.ts`.
 
 ## Rate limits
 
@@ -108,6 +118,8 @@ npm run build
 6. Payer and code landing pages (for example "UHC telehealth billing") that collect related answers for SEO.
 
 ## Changelog
+
+**v0.7**: About us (with mission), Careers and Contact pages, footer links, sitemap entries. Contact messages and job applications go to a new "Messages and job applications" section in the team queue and email the team. Optional settings `CONTACT_EMAIL`, `CONTACT_PHONE`, `CONTACT_ADDRESS`, `CONTACT_HOURS`. Adds `drizzle/0005_inquiries.sql` (the Vercel build command runs it).
 
 **v0.6**: free for all providers. Removed paid plans, urgent questions and Stripe; every question is due within 1 business day, public or private. New Billing services page (`/services`, 8 services incl. eligibility verification and prior authorization, quote requests, no prices); `/pricing` redirects there. Team gets an email for every new question. No database migration needed.
 

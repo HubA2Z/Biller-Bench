@@ -6,6 +6,7 @@ import { appUrl } from "./site";
 import { questionPath } from "./paths";
 import { sendEmailSafe } from "./email";
 import { SERVICES } from "./plans";
+import { CAREER_ROLES } from "./company";
 
 const { users: U } = schema;
 
@@ -62,6 +63,19 @@ export async function notifyStaffOfLead(lead: { service: string; practiceName: s
     to,
     subject: `New service request: ${name} from ${lead.practiceName}`.slice(0, 120),
     text: `${lead.practiceName} asked about ${name}.\n\nContact: ${lead.contactName} <${lead.email}>${lead.claimsPerMonth ? `\nClaims per month: ${lead.claimsPerMonth}` : ""}\n\nSee all requests: ${appUrl()}/team`,
+  });
+}
+
+/** A Contact page message or a Careers application. */
+export async function notifyStaffOfInquiry(i: { kind: "CONTACT" | "CAREER"; name: string; email: string; phone: string | null; organization: string | null; topic: string | null; role: string | null; message: string }) {
+  const to = await staffEmails();
+  if (!to.length) return;
+  const career = i.kind === "CAREER";
+  const role = CAREER_ROLES.find((r) => r.id === i.role)?.title ?? i.role;
+  await sendEmailSafe({
+    to,
+    subject: (career ? `[Job application] ${role}: ${i.name}` : `[Contact] ${i.topic}: ${i.name}`).slice(0, 120),
+    text: `${career ? `${i.name} applied for ${role}.` : `${i.name}${i.organization ? ` (${i.organization})` : ""} sent a message: ${i.topic}.`}\n\nEmail: ${i.email}${i.phone ? `\nPhone: ${i.phone}` : ""}\n\n${i.message.slice(0, 1500)}\n\nSee all messages: ${appUrl()}/team#messages`,
   });
 }
 

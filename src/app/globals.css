@@ -272,3 +272,21 @@ a.qrow{color:inherit;text-decoration:none}
 .mini a{color:var(--ink);text-decoration:none;font-size:13.5px;line-height:1.35}
 .mini a:hover{color:var(--dropout)}
 .services-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+/* About, Careers, Contact */
+.mission{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--dropout);border-radius:var(--r);padding:18px 20px;margin:4px 0 8px}
+.mission p{margin:6px 0 0;font-family:var(--f-display);font-size:clamp(19px,2.6vw,24px);line-height:1.35;font-weight:600;max-width:52ch}
+.steps{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;counter-reset:s}
+.steps li{counter-increment:s;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--ink-2)}
+.steps li::before{content:counter(s);font-family:var(--f-mono);font-size:12px;color:var(--dropout);font-weight:600}
+.steps strong{color:var(--ink);font-size:15px}
+.contact-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start}
+.contact-side{display:flex;flex-direction:column;gap:12px}
+.contact-side h3{font-size:15px;margin:0 0 4px}
+.contact-side p{margin:0 0 10px}
+.contact-list{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0 0 10px;font-size:13.5px}
+.contact-list dt{color:var(--ink-3)}
+.contact-list dd{margin:0;overflow-wrap:anywhere}
+@media (max-width:760px){.contact-grid{grid-template-columns:1fr}}
+.foot-links{display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:12px;font-size:13.5px}
+.foot-links a{color:var(--ink-2);text-decoration:none}
+.foot-links a:hover{color:var(--dropout);text-decoration:underline}

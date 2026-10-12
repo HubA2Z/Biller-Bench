@@ -17,6 +17,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/services`, changeFrequency: "monthly" },
     { url: `${base}/experts`, changeFrequency: "monthly" },
     { url: `${base}/updates`, changeFrequency: "daily" },
+    { url: `${base}/about`, changeFrequency: "monthly" },
+    { url: `${base}/careers`, changeFrequency: "monthly" },
+    { url: `${base}/contact`, changeFrequency: "yearly" },
     ...(await db.select({ slug: schema.articles.slug, updatedAt: schema.articles.updatedAt }).from(schema.articles)
       .where(eq(schema.articles.status, "PUBLISHED")).orderBy(desc(schema.articles.updatedAt)).limit(5000))
       .map((a) => ({ url: `${base}/updates/${a.slug}`, lastModified: a.updatedAt, changeFrequency: "monthly" as const })),

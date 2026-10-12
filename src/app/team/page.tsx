@@ -11,6 +11,8 @@ import { payerLabel } from "@/lib/taxonomy";
 import { timeAgo } from "@/lib/sla";
 import { startOfMonth } from "@/lib/queries";
 import { approveNpi, resolveFlag, setLeadStatus } from "@/app/actions/team";
+import { setInquiryStatus } from "@/app/actions/inquiries";
+import { CAREER_ROLES } from "@/lib/company";
 import { SubmitButton } from "@/components/SubmitButton";
 import { TierChips, slaText } from "@/components/ui";
 
@@ -18,10 +20,10 @@ export const metadata: Metadata = { title: "Team queue", robots: { index: false 
 
 export default async function Team() {
   const me = await requireStaff();
-  const { questions: Q, users: U, answers: A, flags: F, serviceRequests: S } = schema;
+  const { questions: Q, users: U, answers: A, flags: F, serviceRequests: S, inquiries: I } = schema;
   const AQ = alias(Q, "aq");
 
-  const [open, leads, reports, npiReview, [{ providers }], [{ askedThisMonth }]] = await Promise.all([
+  const [open, leads, reports, npiReview, [{ providers }], [{ askedThisMonth }], messages] = await Promise.all([
     db.select({ q: Q, org: U.practiceName, name: U.name, plan: U.plan }).from(Q).innerJoin(U, eq(U.id, Q.authorId))
       .where(and(eq(Q.status, "OPEN"), eq(Q.removed, false))).orderBy(sql`${Q.dueAt} asc nulls last`).limit(200),
     db.select().from(S).where(eq(S.status, "NEW")).orderBy(desc(S.createdAt)).limit(100),
@@ -31,6 +33,7 @@ export default async function Team() {
     db.select().from(U).where(and(eq(U.role, "PROVIDER"), isNotNull(U.npi), isNull(U.npiVerifiedAt))).limit(50),
     db.select({ providers: count() }).from(U).where(eq(U.role, "PROVIDER")),
     db.select({ askedThisMonth: count() }).from(Q).where(and(gte(Q.createdAt, startOfMonth()), eq(Q.removed, false))),
+    db.select().from(I).where(eq(I.status, "NEW")).orderBy(desc(I.createdAt)).limit(100),
   ]);
   const overdue = open.filter(({ q }) => q.dueAt && q.dueAt < new Date()).length;
 
@@ -45,6 +48,7 @@ export default async function Team() {
         <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{askedThisMonth}</b>questions this month</div>
         <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{providers}</b>provider accounts</div>
         <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{leads.length}</b>new service requests</div>
+        <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{messages.length}</b>new messages and applications</div>
       </div>
 
       <section className="section" style={{ marginTop: 0 }}><h2>Open questions</h2>
@@ -75,6 +79,22 @@ export default async function Team() {
                   <SubmitButton className="btn sm ghost">{st === "CONTACTED" ? "Contacted" : st === "WON" ? "Won" : "Lost"}</SubmitButton></form>))}
             </div></div>))
           : <div className="empty">No new requests.</div>}
+      </div></section>
+
+      <section className="section" id="messages"><h2>Messages and job applications</h2><div className="qlist">
+        {messages.length ? messages.map((m) => (
+          <div key={m.id} className="mqrow"><div className="body">
+            <div className="eyebrow">{m.kind === "CAREER" ? `Application · ${CAREER_ROLES.find((r) => r.id === m.role)?.title ?? m.role}` : `Contact · ${m.topic}`} · {timeAgo(m.createdAt)}</div>
+            <h3 style={{ margin: "4px 0" }}>{m.name}{m.organization ? <span className="muted small" style={{ fontWeight: 400 }}> · {m.organization}</span> : null} <span className="muted small" style={{ fontWeight: 400 }}>· <a href={`mailto:${m.email}`}>{m.email}</a>{m.phone ? ` · ${m.phone}` : ""}</span></h3>
+            {(m.experience || m.link) && <div className="small muted">{m.experience}{m.experience && m.link ? " · " : ""}{m.link && /^https:\/\//i.test(m.link) ? <a href={m.link} target="_blank" rel="noopener noreferrer nofollow">Profile / resume</a> : null}</div>}
+            <div className="small" style={{ marginTop: 4, whiteSpace: "pre-line" }}>{m.message}</div>
+          </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {(["REVIEWED", "ARCHIVED"] as const).map((st) => (
+                <form key={st} action={setInquiryStatus}><input type="hidden" name="inquiryId" value={m.id} /><input type="hidden" name="status" value={st} />
+                  <SubmitButton className="btn sm ghost">{st === "REVIEWED" ? "Mark reviewed" : "Archive"}</SubmitButton></form>))}
+            </div></div>))
+          : <div className="empty">No new messages.</div>}
       </div></section>
 
       <section className="section"><h2>PHI reports</h2><div className="qlist">

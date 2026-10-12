@@ -18,6 +18,8 @@ export const answerTypeEnum = pgEnum("answer_type", ["EXPERT", "FOLLOWUP"]);
 export const flagStatusEnum = pgEnum("flag_status", ["OPEN", "RESTORED", "REMOVED"]);
 export const articleKindEnum = pgEnum("article_kind", ["ARTICLE", "CODING_UPDATE", "PAYER_UPDATE"]);
 export const articleStatusEnum = pgEnum("article_status", ["DRAFT", "PUBLISHED"]);
+export const inquiryKindEnum = pgEnum("inquiry_kind", ["CONTACT", "CAREER"]);
+export const inquiryStatusEnum = pgEnum("inquiry_status", ["NEW", "REVIEWED", "ARCHIVED"]);
 export const leadStatusEnum = pgEnum("lead_status", ["NEW", "CONTACTED", "WON", "LOST"]);
 
 export const users = pgTable("users", {
@@ -175,6 +177,23 @@ export const articles = pgTable("articles", {
   index("articles_status_published_idx").on(t.status, t.publishedAt),
   index("articles_codes_gin").using("gin", t.codes),
 ]);
+
+/** Messages from the Contact page and job applications from the Careers page. */
+export const inquiries = pgTable("inquiries", {
+  id: id(),
+  kind: inquiryKindEnum("kind").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  organization: text("organization"),
+  topic: text("topic"),
+  role: text("role"),
+  experience: text("experience"),
+  link: text("link"),
+  message: text("message").notNull(),
+  status: inquiryStatusEnum("status").notNull().default("NEW"),
+  createdAt: created(),
+}, (t) => [index("inquiries_status_idx").on(t.status, t.kind)]);
 
 /** Files from content/updates already loaded, so each file is imported once (even if its article is later deleted). */
 export const contentImports = pgTable("content_imports", {

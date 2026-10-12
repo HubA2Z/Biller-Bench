@@ -17,6 +17,7 @@ export const LIMITS = {
   reportUser: { limit: 20, windowSec: 60 * 60 },
   voteUser: { limit: 120, windowSec: 60 * 60 },
   leadIp: { limit: 5, windowSec: 60 * 60 },
+  inquiryIp: { limit: 5, windowSec: 60 * 60 },
   npiUser: { limit: 10, windowSec: 60 * 60 },
   similarIp: { limit: 60, windowSec: 60 },
 } satisfies Record<string, Limit>;

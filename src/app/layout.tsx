@@ -45,6 +45,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </header>
         <main className="wrap">{children}</main>
         <footer className="foot">
+          <nav className="foot-links" aria-label="Company">
+            <Link href="/about">About us</Link>
+            <Link href="/services">Billing services</Link>
+            <Link href="/updates">Coding updates</Link>
+            <Link href="/experts">Our billers</Link>
+            <Link href="/careers">Careers</Link>
+            <Link href="/contact">Contact</Link>
+          </nav>
           Answers are general billing guidance based on published payer and CMS policy, not a guarantee of payment or legal advice.
           CPT® is a registered trademark of the American Medical Association. Never post patient information on BillerBench.
         </footer>
