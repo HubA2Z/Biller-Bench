@@ -1,5 +1,6 @@
 import "server-only";
 import { escapeHtml } from "./markdown";
+import { appUrl } from "./site";
 
 export type Email = { to: string | string[]; subject: string; text: string; html?: string };
 
@@ -70,7 +71,7 @@ export function layout(title: string, text: string) {
     `<p style="margin:0 0 14px">${escapeHtml(p).replace(/\n/g, "<br>").replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#B42336">$1</a>')}</p>`).join("");
   return `<!doctype html><html><body style="margin:0;background:#F6F4F3;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1C1A21">
 <div style="max-width:560px;margin:0 auto;padding:28px 20px">
-<div style="font-weight:700;font-size:20px;margin-bottom:18px">Biller<span style="color:#B42336">Bench</span></div>
+<div style="font-weight:700;font-size:20px;margin-bottom:18px"><img src="${appUrl()}/icon-96.png" width="28" height="28" alt="" style="vertical-align:middle;border-radius:6px;margin-right:8px">Biller<span style="color:#B42336">Bench</span></div>
 <div style="background:#fff;border:1px solid #E2DDDA;border-radius:8px;padding:22px;font-size:15px;line-height:1.55">
 <h1 style="font-size:18px;margin:0 0 14px">${escapeHtml(title)}</h1>${body}</div>
 <p style="font-size:12px;color:#8A838C;margin-top:16px">You get this email because you have a BillerBench account. Turn off notifications on your account page.</p>

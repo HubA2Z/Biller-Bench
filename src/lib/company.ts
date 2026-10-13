@@ -39,5 +39,10 @@ export const CAREER_ROLES = [
   { id: "other", title: "Other roles", desc: "Operations, client success, or something we haven’t listed.", needs: [] },
 ] as const;
 
+/** Brand lines used in Google results, share previews and the home page. */
+export const TAGLINE = "Free answers to your toughest claim questions, from certified billers.";
+export const SEO_TITLE = "BillerBench | Free Medical Billing Answers from Certified Billers";
+export const SEO_DESCRIPTION = "Ask any claim denial, CPT, ICD-10 or modifier question free. Certified billers answer within 1 business day, with the payer policy behind every answer.";
+
 /** Shown on the About page. Edit freely. */
 export const MISSION = "Help every US practice get paid correctly for the care it gives, by putting certified billers within reach of any provider, free.";

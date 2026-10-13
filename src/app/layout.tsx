@@ -1,19 +1,24 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { getCurrentUser, isStaff } from "@/lib/auth";
 import { logout } from "./actions/auth";
 import { NavLinks } from "@/components/NavLinks";
 import { appUrl } from "@/lib/site";
-import { company, socialLinks } from "@/lib/company";
+import { SEO_DESCRIPTION, SEO_TITLE, company, socialLinks } from "@/lib/company";
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl()),
-  title: { default: "BillerBench: medical billing answers from certified billers", template: "%s · BillerBench" },
-  description: "Ask claim denial, CPT, ICD-10 and modifier questions. Certified billers answer, with the payer policy behind every answer.",
+  title: { default: SEO_TITLE, template: "%s | BillerBench" },
+  description: SEO_DESCRIPTION,
+  applicationName: "BillerBench",
+  openGraph: { type: "website", siteName: "BillerBench", locale: "en_US", title: SEO_TITLE, description: SEO_DESCRIPTION, url: "/" },
+  twitter: { card: "summary_large_image", title: SEO_TITLE, description: SEO_DESCRIPTION },
   // Google Search Console "HTML tag" verification: paste only the content="…" value into GOOGLE_SITE_VERIFICATION.
   verification: { google: process.env.GOOGLE_SITE_VERIFICATION?.trim() || "jXm16wfXIbSHp41pq15Gnlw3u1OP_L4QJ4JH4kqYISU" },
 };
+
+export const viewport: Viewport = { themeColor: "#B42336" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
@@ -36,7 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <header className="top">
           <div className="top-in">
-            <Link className="brand" href="/" aria-label="BillerBench home">Biller<b>Bench</b></Link>
+            <Link className="brand" href="/" aria-label="BillerBench home"><img src="/icon.svg" alt="" width={28} height={28} className="brand-mark" />Biller<b>Bench</b></Link>
             <NavLinks staff={staff} />
             <div className="who">
               {user ? (

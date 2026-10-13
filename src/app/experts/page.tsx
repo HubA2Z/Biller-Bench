@@ -4,7 +4,7 @@ import { db, schema } from "@/db";
 import { formatDuration } from "@/lib/sla";
 import { Badge } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Our experts", description: "The certified medical billers who answer every BillerBench question." };
+export const metadata: Metadata = { title: "Our Certified Billers", description: "Meet the certified medical billers and coders who answer every BillerBench question." };
 export const dynamic = "force-dynamic";
 
 export default async function Experts() {

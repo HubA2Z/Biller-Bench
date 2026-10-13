@@ -6,7 +6,7 @@ import { ARTICLE_KINDS, articlePath, formatDate, type ArticleKind } from "@/lib/
 import { getCurrentUser, isAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Coding and payer updates",
+  title: "Medical Coding and Payer Policy Updates",
   description: "CPT, HCPCS and ICD-10 changes, payer policy updates and billing guides from certified medical billers.",
   alternates: { canonical: "/updates" },
 };

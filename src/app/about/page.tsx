@@ -4,8 +4,8 @@ import { MISSION } from "@/lib/company";
 import { ANSWER_TIME, SERVICES } from "@/lib/plans";
 
 export const metadata: Metadata = {
-  title: "About us",
-  description: "BillerBench is a free medical billing Q&A for US providers, answered by our own certified billers. Learn about our mission and how we work.",
+  title: "About BillerBench",
+  description: "BillerBench gives US practices free answers to claim and coding questions from our in-house certified billers. Our mission, values and how it works.",
   alternates: { canonical: "/about" },
 };
 

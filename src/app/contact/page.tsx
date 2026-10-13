@@ -5,8 +5,8 @@ import { CONTACT_TOPICS, company, socialLinks } from "@/lib/company";
 import { ContactForm } from "@/components/InquiryForms";
 
 export const metadata: Metadata = {
-  title: "Contact us",
-  description: "Contact the BillerBench team about the site, billing services, partnerships or your account.",
+  title: "Contact Us",
+  description: "Talk to the BillerBench team about billing services, partnerships or your account. We reply within one business day.",
   alternates: { canonical: "/contact" },
 };
 

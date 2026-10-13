@@ -145,6 +145,8 @@ npm run build
 
 ## Changelog
 
+**v0.8.0**: brand refresh: new B-with-checkmark icon in all sizes (favicon, Apple, 96/192/512, web app manifest), share preview image for LinkedIn/WhatsApp/X, new tagline and Google title/description (`src/lib/company.ts`: TAGLINE, SEO_TITLE, SEO_DESCRIPTION), home page intro for visitors, logo in the header and emails, clearer page titles, WebSite structured data for the Google site name.
+
 **v0.7.3**: the alert inbox (`FORM_ALERT_EMAILS`) also gets every new question, every provider reply and every new provider sign-up. Billers still get question alerts.
 
 **v0.7.2**: Gmail / SMTP email sending (`SMTP_USER`, `SMTP_PASS`), used on its own or as a backup if Resend fails. Adds the `nodemailer` package.

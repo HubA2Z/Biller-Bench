@@ -4,7 +4,7 @@ import { CAREER_ROLES } from "@/lib/company";
 import { ApplicationForm } from "@/components/InquiryForms";
 
 export const metadata: Metadata = {
-  title: "Careers",
+  title: "Careers: Medical Billing and Coding Jobs",
   description: "Join the BillerBench team: certified medical billers, coders, AR, prior authorization and credentialing specialists. Apply online.",
   alternates: { canonical: "/careers" },
 };

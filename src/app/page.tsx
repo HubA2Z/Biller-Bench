@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { listQuestions, type ListFilters } from "@/lib/queries";
 import { PAYER_GROUPS, SPECIALTIES, STATES } from "@/lib/taxonomy";
 import { ANSWER_TIME } from "@/lib/plans";
+import { TAGLINE } from "@/lib/company";
 import { questionPath } from "@/lib/paths";
 import { timeAgo } from "@/lib/sla";
 import { AutoSubmitForm } from "@/components/AutoSubmitForm";
@@ -77,7 +78,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
       </aside>
 
       <section style={{ minWidth: 0 }}>
-        {user?.role !== "STAFF" && user?.role !== "ADMIN" && (
+        {!user && (
+          <div className="hero">
+            <h1>{TAGLINE}</h1>
+            <p>Ask about claim denials, CPT and ICD-10 coding, modifiers and payer rules. A certified biller on our team answers within {ANSWER_TIME.label}, with the payer policy behind the answer.</p>
+            <div className="cta"><Link className="btn" href="/signup">Ask a question, free</Link><Link className="btn ghost" href="/services">Billing services for practices</Link></div>
+            <ul><li>Free for providers</li><li>Public or private questions</li><li>No patient information, ever</li></ul>
+          </div>
+        )}
+        {user?.role === "PROVIDER" && (
           <div className="banner" style={{ marginBottom: 14 }}>
             <span><strong>Free for providers</strong></span>
             <span className="muted">Certified billers answer within {ANSWER_TIME.label}, public or private.</span>

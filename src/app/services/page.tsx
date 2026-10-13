@@ -8,8 +8,8 @@ import { visibleTo } from "@/lib/queries";
 import { LeadForm } from "@/components/LeadForm";
 
 export const metadata: Metadata = {
-  title: "Medical billing services",
-  description: "Full medical billing, eligibility verification, prior authorization, appeals, denial audits, AR recovery and credentialing from certified billers. Request a quote.",
+  title: "Medical Billing Services for Practices",
+  description: "Full-service medical billing, eligibility checks, prior authorization, appeals, denial audits, AR recovery and credentialing by certified billers. Request a quote.",
   alternates: { canonical: "/services" },
 };
 
