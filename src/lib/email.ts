@@ -6,25 +6,57 @@ export type Email = { to: string | string[]; subject: string; text: string; html
 const from = () => process.env.EMAIL_FROM || "BillerBench <notifications@example.com>";
 
 /**
- * Sends through Resend when RESEND_API_KEY is set; otherwise prints the email
- * to the server log so the flow can be tested locally.
+ * SMTP (for example Gmail with an app password). Set SMTP_USER and SMTP_PASS;
+ * SMTP_HOST defaults to smtp.gmail.com and SMTP_PORT to 465.
+ */
+const smtpConfigured = () => Boolean(process.env.SMTP_USER?.trim() && process.env.SMTP_PASS?.trim());
+let transport: import("nodemailer").Transporter | null = null;
+
+async function sendSmtp(to: string[], msg: Email) {
+  const nodemailer = await import("nodemailer");
+  const port = Number(process.env.SMTP_PORT || 465);
+  const user = process.env.SMTP_USER!.trim();
+  transport ??= nodemailer.createTransport({
+    host: process.env.SMTP_HOST?.trim() || "smtp.gmail.com", port, secure: port === 465,
+    // Gmail shows app passwords in groups of four; spaces don't belong in the password.
+    auth: { user, pass: process.env.SMTP_PASS!.replace(/\s+/g, "") },
+    connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 15_000,
+  });
+  // Gmail only sends from the signed-in address, so the display name is all we change.
+  await transport.sendMail({
+    from: { name: process.env.SMTP_FROM_NAME?.trim() || "BillerBench", address: user },
+    to, subject: msg.subject, text: msg.text, html: msg.html ?? layout(msg.subject, msg.text),
+  });
+}
+
+/**
+ * Sends through Resend when RESEND_API_KEY is set, through SMTP (Gmail) when
+ * SMTP_USER and SMTP_PASS are set (also used if Resend fails), and otherwise
+ * prints the email to the server log so the flow can be tested locally.
  * Never put PHI in an email: titles of private questions stay out.
  */
 export async function sendEmail(msg: Email): Promise<void> {
   const to = Array.isArray(msg.to) ? msg.to : [msg.to];
   if (!to.length) return;
   const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    console.log(`\n[email] to=${to.join(",")} subject="${msg.subject}"\n${msg.text}\n[/email]`);
+  if (key) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: from(), to, subject: msg.subject, text: msg.text, html: msg.html ?? layout(msg.subject, msg.text) }),
+      signal: AbortSignal.timeout(10_000),
+    }).catch((e) => { console.error("[email] Resend request failed", e); return null; });
+    if (res?.ok) return;
+    if (res) console.error(`[email] Resend returned ${res.status}: ${await res.text()}`);
+    if (!smtpConfigured()) return;
+    console.log("[email] falling back to SMTP");
+  }
+  if (smtpConfigured()) {
+    await sendSmtp(to, msg);
+    console.log(`[email] sent via SMTP subject="${msg.subject}"`);
     return;
   }
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: from(), to, subject: msg.subject, text: msg.text, html: msg.html ?? layout(msg.subject, msg.text) }),
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) console.error(`[email] Resend returned ${res.status}: ${await res.text()}`);
+  console.log(`\n[email] to=${to.join(",")} subject="${msg.subject}"\n${msg.text}\n[/email]`);
 }
 
 /** Same as sendEmail, but never throws; use for notifications that must not break the request. */

@@ -23,6 +23,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     "@context": "https://schema.org", "@type": "Organization", name: company().name, url: appUrl(),
     logo: `${appUrl()}/apple-icon.png`, ...(social.length ? { sameAs: social.map((s) => s.url) } : {}),
   };
+  // Tells Google the site name to show in results ("BillerBench" instead of the domain).
+  const site = { "@context": "https://schema.org", "@type": "WebSite", name: company().name, alternateName: "Biller Bench", url: `${appUrl()}/` };
   return (
     <html lang="en">
       <head>
@@ -62,7 +64,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/contact">Contact</Link>
             {social.map((s) => <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer me">{s.label}</a>)}
           </nav>
-          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(org).replace(/</g, "\\u003c") }} />
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([site, org]).replace(/</g, "\\u003c") }} />
           Answers are general billing guidance based on published payer and CMS policy, not a guarantee of payment or legal advice.
           CPT® is a registered trademark of the American Medical Association. Never post patient information on BillerBench.
         </footer>

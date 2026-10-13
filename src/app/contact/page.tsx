@@ -45,7 +45,7 @@ export default async function Contact({ searchParams }: { searchParams: Promise<
               {c.phone && <><dt>Phone</dt><dd><a href={`tel:${c.phone.replace(/[^\d+]/g, "")}`}>{c.phone}</a></dd></>}
               {c.address && <><dt>Address</dt><dd style={{ whiteSpace: "pre-line" }}>{c.address}</dd></>}
               <dt>Hours</dt><dd>{c.hours}</dd>
-              {social.map((s) => <span key={s.label} style={{ display: "contents" }}><dt>{s.label}</dt><dd><a href={s.url} target="_blank" rel="noopener noreferrer me">{s.url.replace(/^https:\/\/(www\.)?/i, "").replace(/\/$/, "")}</a></dd></span>)}
+              {social.length > 0 && <><dt>Follow us</dt><dd style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>{social.map((s) => <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer me">{s.label}</a>)}</dd></>}
             </dl>
             <p className="small muted" style={{ marginBottom: 0 }}>Never send patient information by email or this form.</p>
           </div>
