@@ -78,7 +78,7 @@ Set `FORM_ALERT_EMAILS` (comma-separated) to send service requests, contact mess
 
 1. In Search Console, add a **URL prefix** property for your site address.
 2. Choose **HTML tag** verification and copy only the `content` value (the long code between the quotes).
-3. Set it as `GOOGLE_SITE_VERIFICATION` in Vercel, redeploy, then click **Verify**.
+3. The BillerBench code is built into `src/app/layout.tsx`. To use a different one, set `GOOGLE_SITE_VERIFICATION` in Vercel. Redeploy, then click **Verify**.
 4. Under **Sitemaps**, submit `sitemap.xml`.
 
 A **Domain** property verified with a DNS TXT record at your domain registrar also works and needs no setting here.

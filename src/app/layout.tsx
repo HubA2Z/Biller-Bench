@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: { default: "BillerBench: medical billing answers from certified billers", template: "%s · BillerBench" },
   description: "Ask claim denial, CPT, ICD-10 and modifier questions. Certified billers answer, with the payer policy behind every answer.",
   // Google Search Console "HTML tag" verification: paste only the content="…" value into GOOGLE_SITE_VERIFICATION.
-  verification: process.env.GOOGLE_SITE_VERIFICATION?.trim() ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() } : undefined,
+  verification: { google: process.env.GOOGLE_SITE_VERIFICATION?.trim() || "jXm16wfXIbSHp41pq15Gnlw3u1OP_L4QJ4JH4kqYISU" },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
