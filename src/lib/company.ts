@@ -11,6 +11,15 @@ export const company = () => ({
   hours: process.env.CONTACT_HOURS?.trim() || "Monday to Friday, 9am–5pm US Eastern",
 });
 
+const httpsUrl = (v?: string) => (v && /^https:\/\/\S+$/i.test(v.trim()) ? v.trim() : null);
+
+/** Social profiles shown in the footer, on the Contact page and in search engine data. Set SOCIAL_LINKEDIN_URL and SOCIAL_INSTAGRAM_URL. */
+export const socialLinks = () =>
+  ([
+    { label: "LinkedIn", url: httpsUrl(process.env.SOCIAL_LINKEDIN_URL) },
+    { label: "Instagram", url: httpsUrl(process.env.SOCIAL_INSTAGRAM_URL) },
+  ] as const).filter((s): s is { label: "LinkedIn" | "Instagram"; url: string } => Boolean(s.url));
+
 export const CONTACT_TOPICS = [
   "A question about BillerBench",
   "Billing services for my practice",

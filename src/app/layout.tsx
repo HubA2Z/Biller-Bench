@@ -5,16 +5,24 @@ import { getCurrentUser, isStaff } from "@/lib/auth";
 import { logout } from "./actions/auth";
 import { NavLinks } from "@/components/NavLinks";
 import { appUrl } from "@/lib/site";
+import { company, socialLinks } from "@/lib/company";
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl()),
   title: { default: "BillerBench: medical billing answers from certified billers", template: "%s · BillerBench" },
   description: "Ask claim denial, CPT, ICD-10 and modifier questions. Certified billers answer, with the payer policy behind every answer.",
+  // Google Search Console "HTML tag" verification: paste only the content="…" value into GOOGLE_SITE_VERIFICATION.
+  verification: process.env.GOOGLE_SITE_VERIFICATION?.trim() ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() } : undefined,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
   const staff = isStaff(user);
+  const social = socialLinks();
+  const org = {
+    "@context": "https://schema.org", "@type": "Organization", name: company().name, url: appUrl(),
+    logo: `${appUrl()}/apple-icon.png`, ...(social.length ? { sameAs: social.map((s) => s.url) } : {}),
+  };
   return (
     <html lang="en">
       <head>
@@ -52,7 +60,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/experts">Our billers</Link>
             <Link href="/careers">Careers</Link>
             <Link href="/contact">Contact</Link>
+            {social.map((s) => <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer me">{s.label}</a>)}
           </nav>
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(org).replace(/</g, "\\u003c") }} />
           Answers are general billing guidance based on published payer and CMS policy, not a guarantee of payment or legal advice.
           CPT® is a registered trademark of the American Medical Association. Never post patient information on BillerBench.
         </footer>

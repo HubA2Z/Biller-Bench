@@ -66,7 +66,22 @@ The Contact page shows these only when set (in Vercel: Settings → Environment 
 - `CONTACT_EMAIL`, `CONTACT_PHONE`, `CONTACT_ADDRESS`
 - `CONTACT_HOURS` (default "Monday to Friday, 9am–5pm US Eastern")
 
+- `SOCIAL_LINKEDIN_URL`, `SOCIAL_INSTAGRAM_URL`: full `https://` profile links, shown in the footer and on the Contact page, and given to Google as the site's official profiles
+
 The mission statement, contact topics and career roles live in `src/lib/company.ts`.
+
+## Form notifications
+
+Set `FORM_ALERT_EMAILS` (comma-separated) to send service requests, contact messages and job applications to a dedicated inbox instead of every team member. Questions still alert the team. Emails are only delivered once Resend is set up (see Email setup).
+
+## Google Search Console
+
+1. In Search Console, add a **URL prefix** property for your site address.
+2. Choose **HTML tag** verification and copy only the `content` value (the long code between the quotes).
+3. Set it as `GOOGLE_SITE_VERIFICATION` in Vercel, redeploy, then click **Verify**.
+4. Under **Sitemaps**, submit `sitemap.xml`.
+
+A **Domain** property verified with a DNS TXT record at your domain registrar also works and needs no setting here.
 
 ## Rate limits
 
@@ -118,6 +133,8 @@ npm run build
 6. Payer and code landing pages (for example "UHC telehealth billing") that collect related answers for SEO.
 
 ## Changelog
+
+**v0.7.1**: `FORM_ALERT_EMAILS` for a dedicated form notification inbox, `GOOGLE_SITE_VERIFICATION` for Search Console, LinkedIn and Instagram links (`SOCIAL_LINKEDIN_URL`, `SOCIAL_INSTAGRAM_URL`) in the footer, Contact page and Organization structured data. No database migration.
 
 **v0.7**: About us (with mission), Careers and Contact pages, footer links, sitemap entries. Contact messages and job applications go to a new "Messages and job applications" section in the team queue and email the team. Optional settings `CONTACT_EMAIL`, `CONTACT_PHONE`, `CONTACT_ADDRESS`, `CONTACT_HOURS`. Adds `drizzle/0005_inquiries.sql` (the Vercel build command runs it).
 

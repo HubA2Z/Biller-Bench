@@ -21,6 +21,12 @@ async function staffEmails(): Promise<string[]> {
   return rows.map((r) => r.email);
 }
 
+/** Form submissions (service requests, contact messages, job applications) go to FORM_ALERT_EMAILS when set, otherwise to the team. */
+async function formEmails(): Promise<string[]> {
+  const list = (process.env.FORM_ALERT_EMAILS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  return list.length ? list : staffEmails();
+}
+
 async function recipient(userId: string) {
   const [u] = await db.select().from(U).where(eq(U.id, userId));
   return u && u.emailNotifications ? u : null;
@@ -56,7 +62,7 @@ export async function notifyStaffOfQuestion(q: Question, event: "new" | "followu
 }
 
 export async function notifyStaffOfLead(lead: { service: string; practiceName: string; contactName: string; email: string; claimsPerMonth: string | null }) {
-  const to = await staffEmails();
+  const to = await formEmails();
   if (!to.length) return;
   const name = SERVICES.find((s) => s.id === lead.service)?.name ?? lead.service;
   await sendEmailSafe({
@@ -68,7 +74,7 @@ export async function notifyStaffOfLead(lead: { service: string; practiceName: s
 
 /** A Contact page message or a Careers application. */
 export async function notifyStaffOfInquiry(i: { kind: "CONTACT" | "CAREER"; name: string; email: string; phone: string | null; organization: string | null; topic: string | null; role: string | null; message: string }) {
-  const to = await staffEmails();
+  const to = await formEmails();
   if (!to.length) return;
   const career = i.kind === "CAREER";
   const role = CAREER_ROLES.find((r) => r.id === i.role)?.title ?? i.role;

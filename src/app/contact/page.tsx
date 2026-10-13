@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCurrentUser, isStaff } from "@/lib/auth";
-import { CONTACT_TOPICS, company } from "@/lib/company";
+import { CONTACT_TOPICS, company, socialLinks } from "@/lib/company";
 import { ContactForm } from "@/components/InquiryForms";
 
 export const metadata: Metadata = {
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 export default async function Contact({ searchParams }: { searchParams: Promise<{ topic?: string }> }) {
   const { topic } = await searchParams;
   const c = company();
+  const social = socialLinks();
   const user = await getCurrentUser();
   const provider = user && !isStaff(user) ? user : null;
   const pickedTopic = (CONTACT_TOPICS as readonly string[]).includes(topic ?? "") ? topic : undefined;
@@ -44,6 +45,7 @@ export default async function Contact({ searchParams }: { searchParams: Promise<
               {c.phone && <><dt>Phone</dt><dd><a href={`tel:${c.phone.replace(/[^\d+]/g, "")}`}>{c.phone}</a></dd></>}
               {c.address && <><dt>Address</dt><dd style={{ whiteSpace: "pre-line" }}>{c.address}</dd></>}
               <dt>Hours</dt><dd>{c.hours}</dd>
+              {social.map((s) => <span key={s.label} style={{ display: "contents" }}><dt>{s.label}</dt><dd><a href={s.url} target="_blank" rel="noopener noreferrer me">{s.url.replace(/^https:\/\/(www\.)?/i, "").replace(/\/$/, "")}</a></dd></span>)}
             </dl>
             <p className="small muted" style={{ marginBottom: 0 }}>Never send patient information by email or this form.</p>
           </div>
