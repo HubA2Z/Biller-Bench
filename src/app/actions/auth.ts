@@ -8,7 +8,7 @@ import { db, schema } from "@/db";
 import { createSession, destroySession } from "@/lib/session";
 import { SPECIALTIES, STATES } from "@/lib/taxonomy";
 import { LIMITS, hit, hitIp, resetLimit, waitMessage } from "@/lib/rate-limit";
-import { sendPasswordChanged, sendPasswordReset } from "@/lib/notify";
+import { notifyNewProvider, sendPasswordChanged, sendPasswordReset } from "@/lib/notify";
 import { createLinkToken, hashToken } from "@/lib/tokens";
 
 const { users: U, passwordResetTokens: T } = schema;
@@ -49,6 +49,7 @@ export async function signup(_: FormState, form: FormData): Promise<FormState> {
     lastLoginAt: new Date(),
   }).returning({ id: U.id, v: U.sessionVersion });
   await createSession(u.id, u.v);
+  after(() => notifyNewProvider({ name: d.name, email: d.email, practiceName: d.practiceName ?? null, specialty: d.specialty ?? null, state: d.state ?? null }));
   redirect("/account?welcome=1");
 }
 

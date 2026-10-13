@@ -53,6 +53,17 @@ It prints a temporary password. Sign in, change it with "Forgot your password?",
 
 ## Email setup
 
+**Option A: Gmail (quickest).** Sends from a Gmail address, up to about 500 emails a day.
+
+1. On that Google account, turn on 2-Step Verification (myaccount.google.com → Security).
+2. Open myaccount.google.com/apppasswords, create an app password named "BillerBench", and copy the 16-letter code.
+3. In Vercel set `SMTP_USER` (the Gmail address) and `SMTP_PASS` (the app password), then redeploy.
+
+Optional: `SMTP_FROM_NAME` (default "BillerBench"), `SMTP_HOST` and `SMTP_PORT` for another mail provider (default smtp.gmail.com, 465).
+
+**Option B: Resend (sends from your own domain).**
+
+
 1. Create a [Resend](https://resend.com) account, verify your sending domain, and create an API key.
 2. Set `RESEND_API_KEY` and `EMAIL_FROM` (for example `BillerBench <notifications@yourdomain.com>`).
 3. Optional: set `STAFF_ALERT_EMAILS` to send team alerts to a shared inbox instead of every team member.
@@ -72,7 +83,7 @@ The mission statement, contact topics and career roles live in `src/lib/company.
 
 ## Form notifications
 
-Set `FORM_ALERT_EMAILS` (comma-separated) to send service requests, contact messages and job applications to a dedicated inbox instead of every team member. Questions still alert the team. Emails are only delivered once Resend is set up (see Email setup).
+Set `FORM_ALERT_EMAILS` (comma-separated) for an owner alert inbox. It gets service requests, contact messages, job applications and new provider sign-ups (instead of every team member), plus a copy of every new question and provider reply (billers get those too). Emails are only delivered once Resend is set up (see Email setup).
 
 ## Google Search Console
 
@@ -133,6 +144,10 @@ npm run build
 6. Payer and code landing pages (for example "UHC telehealth billing") that collect related answers for SEO.
 
 ## Changelog
+
+**v0.7.3**: the alert inbox (`FORM_ALERT_EMAILS`) also gets every new question, every provider reply and every new provider sign-up. Billers still get question alerts.
+
+**v0.7.2**: Gmail / SMTP email sending (`SMTP_USER`, `SMTP_PASS`), used on its own or as a backup if Resend fails. Adds the `nodemailer` package.
 
 **v0.7.1**: `FORM_ALERT_EMAILS` for a dedicated form notification inbox, `GOOGLE_SITE_VERIFICATION` for Search Console, LinkedIn and Instagram links (`SOCIAL_LINKEDIN_URL`, `SOCIAL_INSTAGRAM_URL`) in the footer, Contact page and Organization structured data. No database migration.
 

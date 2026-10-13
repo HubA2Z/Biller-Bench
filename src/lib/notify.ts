@@ -21,9 +21,12 @@ async function staffEmails(): Promise<string[]> {
   return rows.map((r) => r.email);
 }
 
-/** Form submissions (service requests, contact messages, job applications) go to FORM_ALERT_EMAILS when set, otherwise to the team. */
+/** The admin alert inbox (FORM_ALERT_EMAILS). */
+const alertInbox = () => (process.env.FORM_ALERT_EMAILS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+
+/** Form submissions and new sign-ups go to the alert inbox when set, otherwise to the team. */
 async function formEmails(): Promise<string[]> {
-  const list = (process.env.FORM_ALERT_EMAILS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const list = alertInbox();
   return list.length ? list : staffEmails();
 }
 
@@ -48,7 +51,8 @@ export async function notifyAskerOfReply(q: Question, type: "EXPERT" | "FOLLOWUP
 
 /** Tell the team a paid question is waiting, or that an asker replied. */
 export async function notifyStaffOfQuestion(q: Question, event: "new" | "followup") {
-  const to = await staffEmails();
+  // Billers who answer, plus the admin alert inbox so the owner sees every question and reply.
+  const to = [...new Set([...(await staffEmails()), ...alertInbox()].map((e) => e.toLowerCase()))];
   if (!to.length) return;
   const due = q.dueAt ? q.dueAt.toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" }) + " ET" : "soon";
   const visibility = q.isPrivate ? "Private" : "Public";
@@ -82,6 +86,17 @@ export async function notifyStaffOfInquiry(i: { kind: "CONTACT" | "CAREER"; name
     to,
     subject: (career ? `[Job application] ${role}: ${i.name}` : `[Contact] ${i.topic}: ${i.name}`).slice(0, 120),
     text: `${career ? `${i.name} applied for ${role}.` : `${i.name}${i.organization ? ` (${i.organization})` : ""} sent a message: ${i.topic}.`}\n\nEmail: ${i.email}${i.phone ? `\nPhone: ${i.phone}` : ""}\n\n${i.message.slice(0, 1500)}\n\nSee all messages: ${appUrl()}/team#messages`,
+  });
+}
+
+/** A provider created an account. */
+export async function notifyNewProvider(u: { name: string; email: string; practiceName: string | null; specialty: string | null; state: string | null }) {
+  const to = await formEmails();
+  if (!to.length) return;
+  await sendEmailSafe({
+    to,
+    subject: `[New provider] ${u.name}${u.practiceName ? `, ${u.practiceName}` : ""}`.slice(0, 120),
+    text: `A new provider created a BillerBench account.\n\nName: ${u.name}\nEmail: ${u.email}${u.practiceName ? `\nPractice: ${u.practiceName}` : ""}${u.specialty ? `\nSpecialty: ${u.specialty}` : ""}${u.state ? `\nState: ${u.state}` : ""}\n\nTeam queue: ${appUrl()}/team`,
   });
 }
 
