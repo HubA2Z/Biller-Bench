@@ -9,10 +9,45 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "../src/db/schema";
 import { parseUpdateFile } from "../src/lib/content-file";
 import { slugify } from "../src/lib/slug";
+import { parseDenialFile } from "../src/lib/denials";
 
 const DIR = path.join(process.cwd(), "content", "updates");
 
 export async function importContent(db: NodePgDatabase<typeof schema>) {
+  await importUpdates(db);
+  await importDenials(db);
+}
+
+const DENIAL_DIR = path.join(process.cwd(), "content", "denials");
+
+/** Loads new files from content/denials as draft Denial Code Library pages (once per file). */
+async function importDenials(db: NodePgDatabase<typeof schema>) {
+  if (!existsSync(DENIAL_DIR)) return;
+  const files = readdirSync(DENIAL_DIR).filter((f) => f.endsWith(".md") && !f.startsWith("_") && f.toLowerCase() !== "readme.md").sort();
+  const done = new Set((await db.select({ file: schema.contentImports.file }).from(schema.contentImports)).map((r) => r.file));
+  const D = schema.denialCodes;
+  let added = 0;
+  for (const f of files) {
+    const key = `denials/${f}`;
+    if (done.has(key)) continue;
+    const parsed = parseDenialFile(readFileSync(path.join(DENIAL_DIR, f), "utf8"));
+    if (!parsed.ok) { console.warn(`Denials: skipped ${f}: ${parsed.errors.join(" ")}`); continue; }
+    const d = parsed.denial;
+    await db.transaction(async (tx) => {
+      // A code that already has a page (for example edited in the admin screen) is left alone.
+      const [existing] = await tx.select({ id: D.id }).from(D).where(eq(D.code, d.code));
+      const id = existing?.id ?? (await tx.insert(D).values({
+        code: d.code, groupCode: d.groupCode, slug: d.slug, category: d.category, title: d.title,
+        quickAnswer: d.quickAnswer, body: d.body, related: d.related, status: "DRAFT",
+      }).returning({ id: D.id }))[0].id;
+      await tx.insert(schema.contentImports).values({ file: key, articleId: id });
+    });
+    added++;
+  }
+  console.log(added ? `Denials: imported ${added} file(s) as drafts.` : "Denials: no new files.");
+}
+
+async function importUpdates(db: NodePgDatabase<typeof schema>) {
   if (!existsSync(DIR)) return;
   const files = readdirSync(DIR).filter((f) => f.endsWith(".md") && !f.startsWith("_") && f.toLowerCase() !== "readme.md").sort();
   if (!files.length) return;

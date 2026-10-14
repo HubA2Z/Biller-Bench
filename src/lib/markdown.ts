@@ -24,7 +24,16 @@ export function renderMarkdown(src: string): string {
       const tag = h[1].length === 3 ? "h3" : "h2"; // the page title is the only h1
       return `<${tag}>${inline(h[2])}</${tag}>`;
     }
-    if (lines.every((l) => /^\s*\d+[.)] /.test(l))) return "<ol>" + lines.map((l) => `<li>${inline(l.replace(/^\s*\d+[.)] /, ""))}</li>`).join("") + "</ol>";
+    if (lines.length >= 2 && lines.every((l) => /^\s*\|.*\|\s*$/.test(l)) && /^\s*\|[\s:|-]+\|\s*$/.test(lines[1])) {
+      const cells = (l: string) => l.trim().slice(1, -1).split("|").map((c) => inline(c.trim()));
+      const head = cells(lines[0]).map((c) => `<th>${c}</th>`).join("");
+      const rows = lines.slice(2).map((l) => `<tr>${cells(l).map((c) => `<td>${c}</td>`).join("")}</tr>`).join("");
+      return `<div class="tablewrap"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+    if (lines.every((l) => /^\s*\d+[.)] /.test(l))) {
+      const first = Number(lines[0].trim().match(/^\d+/)![0]);
+      return `<ol${first > 1 ? ` start="${first}"` : ""}>` + lines.map((l) => `<li>${inline(l.replace(/^\s*\d+[.)] /, ""))}</li>`).join("") + "</ol>";
+    }
     if (lines.every((l) => /^\s*[-*] /.test(l))) return "<ul>" + lines.map((l) => `<li>${inline(l.replace(/^\s*[-*] /, ""))}</li>`).join("") + "</ul>";
     if (lines.every((l) => /^> ?/.test(l))) return `<blockquote>${inline(lines.map((l) => l.replace(/^> ?/, "")).join(" "))}</blockquote>`;
     return `<p>${lines.map(inline).join("<br>")}</p>`;

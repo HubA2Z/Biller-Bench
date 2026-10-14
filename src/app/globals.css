@@ -298,3 +298,15 @@ a.qrow{color:inherit;text-decoration:none}
 .hero .cta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .hero ul{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
 .hero li::before{content:"✓";color:var(--dropout);font-weight:700;margin-right:6px}
+/* Denial Code Library */
+.denial-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.denial-card{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;color:var(--ink-2);text-decoration:none}
+.denial-card:hover{border-color:var(--dropout)}
+.denial-code{font-family:var(--f-mono);font-weight:600;font-size:15px;color:var(--dropout)}
+.quick-answer{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--dropout);border-radius:var(--r);padding:14px 16px;margin:12px 0}
+.quick-answer p{margin:4px 0 0;font-size:16.5px;line-height:1.55}
+.crumbs a{color:var(--ink-2)}
+.crumbs{color:var(--ink-3)}
+.body table{width:100%;border-collapse:collapse;font-size:14px}
+.body th,.body td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+.body th{background:var(--sunk)}

@@ -9,6 +9,8 @@ import { questionPath } from "@/lib/paths";
 import { plainText } from "@/lib/markdown";
 import { payerLabel } from "@/lib/taxonomy";
 import { QuestionView } from "@/components/QuestionView";
+import { mentionedCodes } from "@/lib/denials";
+import { publishedDenialsFor } from "@/lib/denial-queries";
 
 type Params = { code: string; payer: string; slug: string };
 
@@ -65,7 +67,7 @@ export default async function PublicQuestion({ params, searchParams }: { params:
   return (
     <>
       {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
-      <QuestionView data={data} user={user} notice={notice} updates={await relatedUpdates(data.q.codes)} />
+      <QuestionView data={data} user={user} notice={notice} updates={await relatedUpdates(data.q.codes)} denials={await publishedDenialsFor(mentionedCodes(`${data.q.title}\n${data.q.body}`))} />
     </>
   );
 }

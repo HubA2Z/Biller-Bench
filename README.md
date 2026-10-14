@@ -23,6 +23,7 @@ Expert-answered medical billing Q&A for US practices. Providers ask claim, denia
 | Answers | Staff post expert answers or follow-ups; askers post follow-ups and mark a solution; helpful votes; safe Markdown with LCD/NCD/NCCI link buttons |
 | Billing services | `/services`: 8 services with quote requests (no prices shown). Requests land in the team queue and email the team; providers see their requests on their account page. `/pricing` redirects here |
 | Company pages | `/about` (mission, values, how it works), `/careers` (roles and an application form), `/contact` (contact form, plus email, phone, address and hours from settings). Messages and applications are checked for patient details, rate limited, emailed to the team and listed in the team queue (mark reviewed or archive). Footer links on every page |
+| Denial Code Library | `/denials`: one page per denial reason code (CARC) with a quick answer, causes, fix steps, Medicare vs. commercial table, prevention, sources and a "Reviewed by" byline. Search, categories, `/denials/97` and `/denials/pr-97` redirect to the main page, sitemap entries, Article and Breadcrumb structured data, and links from questions that mention a code. Files in `content/denials/` load as drafts on deploy; the team reviews and publishes them from **Team queue → Denial code pages** |
 | Team queue | Open questions by due time, overdue count, questions this month, provider accounts, service requests (contacted/won/lost), PHI reports (restore/remove), NPI review |
 
 ## Run it locally
@@ -144,6 +145,8 @@ npm run build
 6. Payer and code landing pages (for example "UHC telehealth billing") that collect related answers for SEO.
 
 ## Changelog
+
+**v0.9.0**: Denial Code Library (`/denials`, `/team/denials`, `content/denials/`), first 10 codes as drafts, tables in Markdown. Adds `drizzle/0006_denial_codes.sql`.
 
 **v0.8.0**: brand refresh: new B-with-checkmark icon in all sizes (favicon, Apple, 96/192/512, web app manifest), share preview image for LinkedIn/WhatsApp/X, new tagline and Google title/description (`src/lib/company.ts`: TAGLINE, SEO_TITLE, SEO_DESCRIPTION), home page intro for visitors, logo in the header and emails, clearer page titles, WebSite structured data for the Google site name.
 

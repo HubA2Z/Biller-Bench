@@ -195,6 +195,28 @@ export const inquiries = pgTable("inquiries", {
   createdAt: created(),
 }, (t) => [index("inquiries_status_idx").on(t.status, t.kind)]);
 
+/** Denial Code Library: one page per claim adjustment reason code (CARC). */
+export const denialCodes = pgTable("denial_codes", {
+  id: id(),
+  /** The CARC itself, e.g. "97", "16", "B7". */
+  code: text("code").notNull().unique(),
+  /** Group code shown in the page name (CO, PR, OA, PI). */
+  groupCode: text("group_code").notNull().default("CO"),
+  /** e.g. "co-97" */
+  slug: text("slug").notNull().unique(),
+  category: text("category").notNull(),
+  title: text("title").notNull(),
+  quickAnswer: text("quick_answer").notNull(),
+  body: text("body").notNull(),
+  related: text("related").array().notNull().default(sql`'{}'::text[]`),
+  status: articleStatusEnum("status").notNull().default("DRAFT"),
+  reviewedById: text("reviewed_by_id").references(() => users.id, { onDelete: "set null" }),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  createdAt: created(),
+  updatedAt: updated(),
+}, (t) => [index("denial_codes_status_idx").on(t.status, t.category)]);
+
 /** Files from content/updates already loaded, so each file is imported once (even if its article is later deleted). */
 export const contentImports = pgTable("content_imports", {
   file: text("file").primaryKey(),
@@ -240,3 +262,4 @@ export type Answer = typeof answers.$inferSelect;
 export type Plan = (typeof planEnum.enumValues)[number];
 export type Tier = (typeof tierEnum.enumValues)[number];
 export type Article = typeof articles.$inferSelect;
+export type DenialCode = typeof denialCodes.$inferSelect;
