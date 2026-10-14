@@ -146,6 +146,8 @@ npm run build
 
 ## Changelog
 
+**v0.9.1**: 104 more denial code pages (114 in total) as drafts in `content/denials/`; related codes and question links show each code's one-line meaning.
+
 **v0.9.0**: Denial Code Library (`/denials`, `/team/denials`, `content/denials/`), first 10 codes as drafts, tables in Markdown. Adds `drizzle/0006_denial_codes.sql`.
 
 **v0.8.0**: brand refresh: new B-with-checkmark icon in all sizes (favicon, Apple, 96/192/512, web app manifest), share preview image for LinkedIn/WhatsApp/X, new tagline and Google title/description (`src/lib/company.ts`: TAGLINE, SEO_TITLE, SEO_DESCRIPTION), home page intro for visitors, logo in the header and emails, clearer page titles, WebSite structured data for the Google site name.

@@ -6,6 +6,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { questionPath } from "@/lib/paths";
 import { timeAgo } from "@/lib/sla";
 import { ARTICLE_KINDS } from "@/lib/articles";
+import { denialTeaser } from "@/lib/denials";
 import { acceptAnswer, reportPhi, toggleVote } from "@/app/actions/questions";
 import { AnswerForm } from "./AnswerForm";
 import { SubmitButton } from "./SubmitButton";
@@ -13,7 +14,7 @@ import { Badge, Icon, QuestionChips, TierChips, slaText } from "./ui";
 
 type Data = NonNullable<Awaited<ReturnType<typeof getQuestion>>>;
 type RelatedUpdate = { slug: string; title: string; kind: "ARTICLE" | "CODING_UPDATE" | "PAYER_UPDATE" };
-type RelatedDenial = { code: string; groupCode: string; slug: string; title: string };
+type RelatedDenial = { code: string; groupCode: string; slug: string; title: string; quickAnswer: string };
 
 export function QuestionView({ data, user, notice, updates = [], denials = [] }: { data: Data; user: User | null; notice?: string; updates?: RelatedUpdate[]; denials?: RelatedDenial[] }) {
   const { q, author, answers, voted } = data;
@@ -91,7 +92,7 @@ export function QuestionView({ data, user, notice, updates = [], denials = [] }:
       {denials.length > 0 && (
         <div className="card" style={{ marginTop: 20 }}>
           <div className="eyebrow" style={{ marginBottom: 8 }}>Denial codes in this question</div>
-          <div className="mini">{denials.map((d) => <Link key={d.code} href={`/denials/${d.slug}`}><span className="denial-code" style={{ fontSize: 13, marginRight: 6 }}>{d.groupCode}-{d.code}</span>{d.title.replace(/^[A-Z]{2}-\w+ Denial Code: /, "")}</Link>)}</div>
+          <div className="mini">{denials.map((d) => <Link key={d.code} href={`/denials/${d.slug}`}><span className="denial-code" style={{ fontSize: 13, marginRight: 6 }}>{d.groupCode}-{d.code}</span>{denialTeaser(d.quickAnswer)}</Link>)}</div>
         </div>
       )}
       {updates.length > 0 && (

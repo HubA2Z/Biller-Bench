@@ -5,7 +5,7 @@ import { cache } from "react";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { getCurrentUser, isStaff } from "@/lib/auth";
-import { DENIAL_CATEGORIES, GROUP_CODES, codeFromParam, denialPath } from "@/lib/denials";
+import { DENIAL_CATEGORIES, GROUP_CODES, codeFromParam, denialPath, denialTeaser } from "@/lib/denials";
 import { publishedDenialsFor, questionsMentioning } from "@/lib/denial-queries";
 import { formatDate } from "@/lib/articles";
 import { renderMarkdown } from "@/lib/markdown";
@@ -76,7 +76,7 @@ export default async function DenialPage({ params, searchParams }: { params: Pro
 
         {related.length > 0 && (
           <div className="card" style={{ marginTop: 20 }}><div className="eyebrow" style={{ marginBottom: 8 }}>Related denial codes</div>
-            <div className="mini">{related.map((x) => <Link key={x.code} href={denialPath(x)}><strong>{x.groupCode}-{x.code}</strong> · {x.title.replace(/^[A-Z]{2}-\w+ Denial Code: /, "")}</Link>)}</div></div>)}
+            <div className="mini">{related.map((x) => <Link key={x.code} href={denialPath(x)}><strong>{x.groupCode}-{x.code}</strong> · {denialTeaser(x.quickAnswer)}</Link>)}</div></div>)}
         {questions.length > 0 && (
           <div className="card" style={{ marginTop: 12 }}><div className="eyebrow" style={{ marginBottom: 8 }}>Questions our billers answered about {name}</div>
             <div className="mini">{questions.map((q) => <Link key={q.id} href={questionPath(q)}>{q.title}</Link>)}</div></div>)}

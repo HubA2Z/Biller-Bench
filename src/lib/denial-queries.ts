@@ -21,7 +21,7 @@ export async function listPublishedDenials(term?: string) {
 /** Published pages for a list of codes, in the order given. */
 export async function publishedDenialsFor(codes: string[]) {
   if (!codes.length) return [];
-  const rows = await db.select({ code: D.code, groupCode: D.groupCode, slug: D.slug, title: D.title })
+  const rows = await db.select({ code: D.code, groupCode: D.groupCode, slug: D.slug, title: D.title, quickAnswer: D.quickAnswer })
     .from(D).where(and(eq(D.status, "PUBLISHED"), inArray(D.code, codes)));
   return codes.map((c) => rows.find((r) => r.code === c)).filter((r): r is NonNullable<typeof r> => Boolean(r));
 }

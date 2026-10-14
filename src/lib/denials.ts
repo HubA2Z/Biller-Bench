@@ -41,6 +41,12 @@ export type GroupCode = keyof typeof GROUP_CODES;
 export const normalizeCode = (c: string) => c.trim().toUpperCase().replace(/^0+(?=\d)/, "");
 export const denialSlug = (group: string, code: string) => `${group.toLowerCase()}-${normalizeCode(code).toLowerCase()}`;
 export const denialPath = (d: { slug: string }) => `/denials/${d.slug}`;
+/** First sentence of a quick answer without repeating the code ("CO-97 means the payer…" → "The payer…"). */
+export function denialTeaser(quickAnswer: string) {
+  const first = quickAnswer.split(/(?<=\.)\s/)[0].replace(/^[A-Z]{2}-\w+ means (that )?/, "");
+  return first.charAt(0).toUpperCase() + first.slice(1);
+}
+
 export const defaultTitle = (group: string, code: string) => `${group}-${normalizeCode(code)} Denial Code: Meaning, Causes and How to Fix It`;
 
 /** Turns "/denials/97", "/denials/pr-97" or "/denials/CO97" into the bare code "97". */

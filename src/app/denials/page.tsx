@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DENIAL_CATEGORIES, GROUP_CODES, denialPath, type DenialCategory } from "@/lib/denials";
+import { DENIAL_CATEGORIES, GROUP_CODES, denialPath, denialTeaser as teaser, type DenialCategory } from "@/lib/denials";
 import { listPublishedDenials } from "@/lib/denial-queries";
 import { appUrl } from "@/lib/site";
 
@@ -8,12 +8,6 @@ export const metadata: Metadata = {
   title: "Denial Code Library: CARC Meanings and How to Fix Them",
   description: "Plain-English meanings of claim denial codes (CO, PR, OA, PI) with common causes, fix steps and Medicare vs. commercial payer differences, reviewed by certified billers.",
   alternates: { canonical: "/denials" },
-};
-
-/** First sentence of the quick answer, without repeating the code ("CO-97 means the payer…" → "The payer…"). */
-const teaser = (s: string) => {
-  const first = s.split(/(?<=\.)\s/)[0].replace(/^[A-Z]{2}-\w+ means (that )?/, "");
-  return first.charAt(0).toUpperCase() + first.slice(1);
 };
 
 export default async function Denials({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
