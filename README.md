@@ -146,6 +146,8 @@ npm run build
 
 ## Changelog
 
+**v0.9.2**: smart paste in the article, denial-code and answer editors (Google Docs, Word, web pages and chat apps keep headings, bold, lists, links and tables; `src/lib/paste.ts`), a Tidy up button, and a more forgiving Markdown renderer (lists right under a paragraph, • and 1) lists, nested lists, dividers). Adds the `turndown` package.
+
 **v0.9.1**: 104 more denial code pages (114 in total) as drafts in `content/denials/`; related codes and question links show each code's one-line meaning.
 
 **v0.9.0**: Denial Code Library (`/denials`, `/team/denials`, `content/denials/`), first 10 codes as drafts, tables in Markdown. Adds `drizzle/0006_denial_codes.sql`.

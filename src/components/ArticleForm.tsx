@@ -7,6 +7,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { SPECIALTIES } from "@/lib/taxonomy";
 import { EXPERT_PAYERS } from "@/lib/team";
 import { PhiNotice } from "./PhiNotice";
+import { handleMarkdownPaste, tidyText } from "@/lib/paste";
 
 export type ArticleDraft = {
   id?: string; kind: ArticleKind; status?: "DRAFT" | "PUBLISHED"; title: string; summary: string; body: string;
@@ -83,8 +84,9 @@ export function ArticleForm({ initial }: { initial?: ArticleDraft }) {
           </div>
           {tab === "write" ? (
             <>
-              <div className="toolbar">{TOOLS.map(([l, s]) => <button type="button" key={l} onClick={() => insert(s)}>{l}</button>)}</div>
-              <textarea ref={ta} id="body" value={body} onChange={(e) => setBody(e.target.value)} style={{ minHeight: 360, fontFamily: "var(--f-mono)", fontSize: 13.5 }}
+              <div className="toolbar">{TOOLS.map(([l, s]) => <button type="button" key={l} onClick={() => insert(s)}>{l}</button>)}<button type="button" onClick={() => setBody(tidyText(body))} title="Turn pasted bullets into lists and remove extra blank lines">Tidy up</button></div>
+              <p className="hint" style={{ margin: "0 0 6px" }}>Pasting from Google Docs, Word or a web page keeps headings, bold, lists, links and tables. Check the Preview tab before publishing.</p>
+              <textarea ref={ta} id="body" value={body} onChange={(e) => setBody(e.target.value)} onPaste={(e) => handleMarkdownPaste(e, body, setBody)} style={{ minHeight: 360, fontFamily: "var(--f-mono)", fontSize: 13.5 }}
                 placeholder={"## What changed\n\nWrite in plain text. Use ## for headings, - for lists, **bold**, and [links](https://)."} />
             </>
           ) : (

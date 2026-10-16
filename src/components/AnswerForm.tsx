@@ -4,6 +4,7 @@ import { postAnswer, type AnswerState } from "@/app/actions/answers";
 import { renderMarkdown } from "@/lib/markdown";
 import { PhiNotice } from "./PhiNotice";
 import { SubmitButton } from "./SubmitButton";
+import { handleMarkdownPaste } from "@/lib/paste";
 
 const REFS: [string, string][] = [
   ["Bold", "**bold**"], ["Code", "`CODE`"], ["List", "\n- item"],
@@ -50,7 +51,7 @@ export function AnswerForm({ questionId, path, staff }: { questionId: string; pa
           {tab === "write" ? (
             <>
               {staff && <div className="toolbar" aria-label="Insert reference">{REFS.map(([l, s]) => <button type="button" key={l} onClick={() => insert(s)}>{l}</button>)}</div>}
-              <textarea ref={ta} aria-label="Reply" value={body} onChange={(e) => setBody(e.target.value)}
+              <textarea ref={ta} aria-label="Reply" value={body} onChange={(e) => setBody(e.target.value)} onPaste={(e) => handleMarkdownPaste(e, body, setBody)}
                 placeholder={staff ? "Explain the rule, cite the LCD, NCD or payer policy, and say what to do next." : "Answer the team's question or add detail."} />
             </>
           ) : (

@@ -4,6 +4,7 @@ import { saveDenial, type DenialState } from "@/app/actions/denials";
 import { DENIAL_CATEGORIES, GROUP_CODES, defaultTitle } from "@/lib/denials";
 import { renderMarkdown } from "@/lib/markdown";
 import { PhiNotice } from "./PhiNotice";
+import { handleMarkdownPaste } from "@/lib/paste";
 
 export type DenialDraft = { id?: string; code: string; groupCode: string; category: string; title: string; quickAnswer: string; body: string; related: string[]; status?: string };
 
@@ -52,7 +53,7 @@ export function DenialForm({ initial }: { initial?: DenialDraft }) {
           </div>
           <div className="tabs"><button type="button" aria-pressed={tab === "write"} onClick={() => setTab("write")}>Write</button><button type="button" aria-pressed={tab === "preview"} onClick={() => setTab("preview")}>Preview</button></div>
           {tab === "write"
-            ? <textarea id="body" value={body} onChange={(e) => setBody(e.target.value)} style={{ minHeight: 420, fontFamily: "var(--f-mono)", fontSize: 13.5 }} />
+            ? <textarea id="body" value={body} onChange={(e) => setBody(e.target.value)} onPaste={(e) => handleMarkdownPaste(e, body, setBody)} style={{ minHeight: 420, fontFamily: "var(--f-mono)", fontSize: 13.5 }} />
             : <div className="preview article"><h1 style={{ fontSize: 24 }}>{title || "Untitled"}</h1><div className="quick-answer"><p>{quick}</p></div><div className="body" dangerouslySetInnerHTML={{ __html: renderMarkdown(body || "") }} /></div>}
           <PhiNotice text={`${title}\n${quick}\n${body}`} />
         </div>

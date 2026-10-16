@@ -1,6 +1,6 @@
 {
   "name": "billerbench",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -23,6 +23,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1",
+    "turndown": "^7.2.4",
     "zod": "3.25.76"
   },
   "devDependencies": {
@@ -31,6 +32,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@types/turndown": "^5.0.6",
     "drizzle-kit": "^0.31.11",
     "tsx": "4.23.15",
     "typescript": "5.9.3",

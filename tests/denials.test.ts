@@ -39,3 +39,36 @@ describe("markdown tables", () => {
     expect(html).toContain("&lt;b&gt;Corrected&lt;/b&gt; claim");
   });
 });
+
+describe("forgiving markdown", () => {
+  const r = renderMarkdown;
+  it("renders a list right under a paragraph", () => {
+    expect(r("Key rules:\n- One\n- Two")).toBe("<p>Key rules:</p><ul><li>One</li><li>Two</li></ul>");
+  });
+  it("accepts pasted bullet characters and 1) numbering", () => {
+    expect(r("• First\n• Second")).toBe("<ul><li>First</li><li>Second</li></ul>");
+    expect(r("1) Call\n2) Appeal")).toBe("<ol><li>Call</li><li>Appeal</li></ol>");
+  });
+  it("nests indented lists", () => {
+    expect(r("- Parent\n  - Child\n- Next")).toBe("<ul><li>Parent<ul><li>Child</li></ul></li><li>Next</li></ul>");
+  });
+  it("keeps numbering across a sub-list separated by blank lines", () => {
+    expect(r("1. A\n2. B\n\n- x\n\n3. C")).toBe('<ol><li>A</li><li>B</li></ol><ul><li>x</li></ul><ol start="3"><li>C</li></ol>');
+  });
+  it("renders headings and dividers without blank lines", () => {
+    expect(r("Intro\n## Title\ntext\n---\nmore")).toBe("<p>Intro</p><h2>Title</h2><p>text</p><hr><p>more</p>");
+    expect(r("#### Small")).toBe("<h3>Small</h3>");
+  });
+  it("still escapes HTML", () => {
+    expect(r("- <script>x</script>")).toBe("<ul><li>&lt;script&gt;x&lt;/script&gt;</li></ul>");
+  });
+});
+
+import { tidyText } from "../src/lib/paste";
+describe("tidyText", () => {
+  it("cleans pasted text", () => {
+    expect(tidyText("Rules:\r\n•  One  \n· Two\n\n\n\n#  x")).toBe("Rules:\n- One\n- Two\n\n#  x");
+    expect(tidyText("-   a\n    -   b\n1.  c")).toBe("- a\n    - b\n1. c");
+    expect(tidyText("# **Title**")).toBe("# Title");
+  });
+});
