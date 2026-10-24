@@ -3,6 +3,7 @@ import { startTransition, useActionState, useState } from "react";
 import { submitApplication, submitContact, submitDenialHelp, type InquiryState } from "@/app/actions/inquiries";
 import { CAREER_ROLES, CONTACT_TOPICS } from "@/lib/company";
 import { PhiNotice } from "./PhiNotice";
+import { TrackOnce } from "./Analytics";
 
 /** Keeps what people typed when the server returns an error (a plain form action would clear it). */
 const submitWith = (action: (fd: FormData) => void) => (e: React.FormEvent<HTMLFormElement>) => {
@@ -21,7 +22,7 @@ const Trap = () => (
 export function ContactForm({ name = "", email = "", organization = "", topic }: { name?: string; email?: string; organization?: string; topic?: string }) {
   const [state, action, pending] = useActionState<InquiryState, FormData>(submitContact, undefined);
   const [message, setMessage] = useState("");
-  if (state?.ok) return <div className="phi ok" role="status"><strong>Message sent.</strong> Thanks for reaching out. Someone from our team will reply by email within one business day.</div>;
+  if (state?.ok) return <div className="phi ok" role="status"><TrackOnce event="generate_lead" params={{ form_name: "contact" }} /><strong>Message sent.</strong> Thanks for reaching out. Someone from our team will reply by email within one business day.</div>;
   return (
     <form className="form" noValidate onSubmit={submitWith(action)} style={{ position: "relative" }}>
       <Trap />
@@ -48,7 +49,7 @@ export function ContactForm({ name = "", email = "", organization = "", topic }:
 export function DenialHelpForm({ code }: { code?: string }) {
   const [state, action, pending] = useActionState<InquiryState, FormData>(submitDenialHelp, undefined);
   const [message, setMessage] = useState("");
-  if (state?.ok) return <div className="phi ok" role="status"><strong>Got it.</strong> A certified biller will reply by email within one business day.</div>;
+  if (state?.ok) return <div className="phi ok" role="status"><TrackOnce event="generate_lead" params={{ form_name: code ? "denial_help" : "billing_question", ...(code ? { denial_code: code } : {}) }} /><strong>Got it.</strong> A certified biller will reply by email within one business day.</div>;
   return (
     <form className="form" noValidate onSubmit={submitWith(action)} style={{ position: "relative" }}>
       <Trap />
@@ -76,7 +77,7 @@ export function DenialHelpForm({ code }: { code?: string }) {
 export function ApplicationForm({ role }: { role?: string }) {
   const [state, action, pending] = useActionState<InquiryState, FormData>(submitApplication, undefined);
   const [message, setMessage] = useState("");
-  if (state?.ok) return <div className="phi ok" role="status"><strong>Application received.</strong> Thank you. We review every application and will email you if there’s a fit. We keep applications on file for future openings.</div>;
+  if (state?.ok) return <div className="phi ok" role="status"><TrackOnce event="job_application" /><strong>Application received.</strong> Thank you. We review every application and will email you if there’s a fit. We keep applications on file for future openings.</div>;
   return (
     <form className="form" noValidate onSubmit={submitWith(action)} style={{ position: "relative" }}>
       <Trap />

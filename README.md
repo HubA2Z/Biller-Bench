@@ -146,6 +146,8 @@ npm run build
 
 ## Changelog
 
+**v0.12.1**: Google Analytics 4 (`G-KL04RHTF1D`, change with `NEXT_PUBLIC_GA_ID`), not loaded for team members. Events: `generate_lead` (form_name: denial_help, billing_question, contact, service_quote), `job_application`, `audience_role`, `billing_help_answer`. No names, emails or message text are sent.
+
 **v0.12.0**: library-first home page (denial search, most-searched codes, categories, updates, "Recently answered" once 10+ public answers exist); the question list moved to `/questions` (old `/?code=` links redirect); asking without an account on `/ask` with an optional "publish anonymously" consent; **Publish as Q&A** from team messages (`/team/qa/new`); Q&A drafts with review/publish/delete in the Team queue; 20 common questions in `content/questions/` loaded as drafts on deploy; questions show "BillerBench reader" or "Common question" instead of a person. Adds `drizzle/0008_qa_sources.sql`.
 
 **v0.11.0**: "Who's reading?" card for first-time visitors (bottom corner after 6 seconds, once per visitor, never blocks the page). Physicians and practices are then asked "Need billing help?", billers and billing companies "Looking for billing services or billing help?"; Yes opens the Contact form with the topic chosen. Answers are anonymous (role, page, yes/no) and summarized in the Team queue under "Who's visiting". Adds `drizzle/0007_audience.sql`.

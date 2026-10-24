@@ -5,6 +5,7 @@ import { getCurrentUser, isStaff } from "@/lib/auth";
 import { logout } from "./actions/auth";
 import { NavLinks } from "@/components/NavLinks";
 import { AudiencePrompt } from "@/components/AudiencePrompt";
+import { GoogleAnalytics } from "@/components/Analytics";
 import { appUrl } from "@/lib/site";
 import { SEO_DESCRIPTION, SEO_TITLE, company, socialLinks } from "@/lib/company";
 
@@ -76,6 +77,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           CPT® is a registered trademark of the American Medical Association. Never post patient information on BillerBench.
         </footer>
         {!user && <AudiencePrompt />}
+        {/* Team members are left out so their own visits don't skew the numbers. */}
+        {!staff && <GoogleAnalytics />}
       </body>
     </html>
   );

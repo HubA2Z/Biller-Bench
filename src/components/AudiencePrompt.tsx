@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { recordAudience, recordHelpAnswer } from "@/app/actions/audience";
 import { AUDIENCE_ROLES, type AudienceRole } from "@/lib/audience";
+import { track } from "@/lib/analytics";
 
 const KEY = "bb-audience";
 const read = () => { try { return localStorage.getItem(KEY); } catch { return "unavailable"; } };
@@ -40,13 +41,14 @@ export function AudiencePrompt() {
   if (!open) return null;
   const close = () => { if (step === "role") write("dismissed"); setOpen(false); };
   const choose = (r: AudienceRole) => {
-    write(r); setRole(r);
+    write(r); setRole(r); track("audience_role", { role: r });
     responseId.current = recordAudience(r, path).catch(() => null);
     setStep(AUDIENCE_ROLES[r].followUp ? "help" : "thanks");
   };
   const answerHelp = async (yes: boolean) => {
     const id = await responseId.current;
     if (id) recordHelpAnswer(id, yes).catch(() => {});
+    track("billing_help_answer", { role: role ?? "", answer: yes ? "yes" : "no" });
     if (yes && role) { setOpen(false); router.push(AUDIENCE_ROLES[role].followUp!.yes); }
     else setStep("thanks");
   };

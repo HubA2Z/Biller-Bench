@@ -3,6 +3,7 @@ import { useActionState } from "react";
 import { requestService, type LeadState } from "@/app/actions/leads";
 import { SERVICES } from "@/lib/plans";
 import { SubmitButton } from "./SubmitButton";
+import { TrackOnce } from "./Analytics";
 
 type Props = { service?: string; questionId?: string; questionTitle?: string; practiceName?: string; contactName?: string; email?: string };
 
@@ -10,7 +11,7 @@ export function LeadForm(p: Props) {
   const [state, action] = useActionState<LeadState, FormData>(requestService, undefined);
   if (state?.ok) {
     const name = SERVICES.find((s) => s.id === state.service)?.name.toLowerCase() ?? "this service";
-    return <div className="phi ok"><strong>Request received.</strong> A team lead will reply by email within one business day with a quote for {name}.</div>;
+    return <div className="phi ok"><TrackOnce event="generate_lead" params={{ form_name: "service_quote", service: state.service ?? "" }} /><strong>Request received.</strong> A team lead will reply by email within one business day with a quote for {name}.</div>;
   }
   return (
     <form action={action} className="form">
