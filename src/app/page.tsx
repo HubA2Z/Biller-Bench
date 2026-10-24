@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { POPULAR_DENIALS } from "@/lib/carc-labels";
+import { carcLabel, denialPath } from "@/lib/denials";
+import { publishedDenialsFor } from "@/lib/denial-queries";
 import { getCurrentUser } from "@/lib/auth";
 import { listQuestions, type ListFilters } from "@/lib/queries";
 import { PAYER_GROUPS, SPECIALTIES, STATES } from "@/lib/taxonomy";
@@ -14,6 +18,13 @@ import { QuestionChips, TierChips, slaText } from "@/components/ui";
 
 type SP = Record<string, string | undefined>;
 
+/** Filtered or paged lists (/?code=…, /?page=2) are the same page to Google: point them at "/" and keep them out of the index. */
+export async function generateMetadata({ searchParams }: { searchParams: Promise<SP> }): Promise<Metadata> {
+  const sp = await searchParams;
+  const filtered = Object.values(sp).some(Boolean);
+  return { alternates: { canonical: "/" }, robots: { index: !filtered, follow: true } };
+}
+
 export default async function Home({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
   const user = await getCurrentUser();
@@ -22,9 +33,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
     status: (["answered", "open", "mine"].includes(sp.status ?? "") ? sp.status : "all") as ListFilters["status"],
     sort: sp.sort === "votes" ? "votes" : "recent", page: Number(sp.page) || 1,
   };
-  const [{ rows, total, page, pages }, latest] = await Promise.all([
+  const [{ rows, total, page, pages }, latest, popular] = await Promise.all([
     listQuestions(f, user),
     db.select().from(schema.articles).where(eq(schema.articles.status, "PUBLISHED")).orderBy(desc(schema.articles.publishedAt)).limit(3),
+    publishedDenialsFor(POPULAR_DENIALS.slice(0, 8)),
   ]);
 
   const link = (patch: SP) => {
@@ -68,6 +80,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
             {active && <Link className="clear" href={f.q ? `/?q=${encodeURIComponent(f.q)}` : "/"}>Clear filters</Link>}
           </div>
         </details>
+        {popular.length > 0 && (
+          <div className="card" style={{ padding: 16 }}>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>Most searched denial codes</div>
+            <div className="mini">{popular.map((d) => <Link key={d.code} href={denialPath(d)}><strong className="denial-code" style={{ fontSize: 13, marginRight: 6 }}>{d.groupCode}-{d.code}</strong>{carcLabel(d.code)}</Link>)}</div>
+            <Link className="clear" href="/denials" style={{ display: "inline-block", marginTop: 10 }}>All denial codes →</Link>
+          </div>
+        )}
         {latest.length > 0 && (
           <div className="card" style={{ padding: 16 }}>
             <div className="eyebrow" style={{ marginBottom: 10 }}>Latest updates</div>

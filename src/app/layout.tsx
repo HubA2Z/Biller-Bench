@@ -4,6 +4,7 @@ import "./globals.css";
 import { getCurrentUser, isStaff } from "@/lib/auth";
 import { logout } from "./actions/auth";
 import { NavLinks } from "@/components/NavLinks";
+import { AudiencePrompt } from "@/components/AudiencePrompt";
 import { appUrl } from "@/lib/site";
 import { SEO_DESCRIPTION, SEO_TITLE, company, socialLinks } from "@/lib/company";
 
@@ -74,6 +75,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           Answers are general billing guidance based on published payer and CMS policy, not a guarantee of payment or legal advice.
           CPT® is a registered trademark of the American Medical Association. Never post patient information on BillerBench.
         </footer>
+        {!user && <AudiencePrompt />}
       </body>
     </html>
   );

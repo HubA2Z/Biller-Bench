@@ -23,6 +23,7 @@ export const socialLinks = () =>
 export const CONTACT_TOPICS = [
   "A question about BillerBench",
   "Billing services for my practice",
+  "Billing help for my billing team or company",
   "Partnership or sponsorship",
   "Report a problem with the site",
   "Privacy or account request",

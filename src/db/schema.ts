@@ -217,6 +217,16 @@ export const denialCodes = pgTable("denial_codes", {
   updatedAt: updated(),
 }, (t) => [index("denial_codes_status_idx").on(t.status, t.category)]);
 
+/** Anonymous answers to "Who's reading?" (no name, email or IP is stored). */
+export const audienceResponses = pgTable("audience_responses", {
+  id: id(),
+  role: text("role").notNull(),
+  path: text("path"),
+  /** Answer to the follow-up "Need billing help?" (null if not answered). */
+  wantsHelp: boolean("wants_help"),
+  createdAt: created(),
+}, (t) => [index("audience_responses_created_idx").on(t.createdAt)]);
+
 /** Files from content/updates already loaded, so each file is imported once (even if its article is later deleted). */
 export const contentImports = pgTable("content_imports", {
   file: text("file").primaryKey(),

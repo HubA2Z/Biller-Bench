@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, ne, notInArray, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { normalizeCode } from "./denials";
 
@@ -24,6 +24,13 @@ export async function publishedDenialsFor(codes: string[]) {
   const rows = await db.select({ code: D.code, groupCode: D.groupCode, slug: D.slug, title: D.title, quickAnswer: D.quickAnswer })
     .from(D).where(and(eq(D.status, "PUBLISHED"), inArray(D.code, codes)));
   return codes.map((c) => rows.find((r) => r.code === c)).filter((r): r is NonNullable<typeof r> => Boolean(r));
+}
+
+/** Other published codes in the same category, for internal links. */
+export async function sameCategoryDenials(category: string, exclude: string[], limit = 8) {
+  return db.select({ code: D.code, groupCode: D.groupCode, slug: D.slug, quickAnswer: D.quickAnswer })
+    .from(D).where(and(eq(D.status, "PUBLISHED"), eq(D.category, category), notInArray(D.code, exclude.length ? exclude : [""])))
+    .orderBy(sql`length(${D.code})`, asc(D.code)).limit(limit);
 }
 
 /** Public, answered questions that mention this denial code (CO-97, PR 97, CARC 97, denial code 97). */

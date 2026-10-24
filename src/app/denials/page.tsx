@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DENIAL_CATEGORIES, GROUP_CODES, denialPath, denialTeaser as teaser, type DenialCategory } from "@/lib/denials";
+import { DENIAL_CATEGORIES, GROUP_CODES, carcLabel, categoryPath, denialPath, denialTeaser as teaser, type DenialCategory } from "@/lib/denials";
+import { POPULAR_DENIALS } from "@/lib/carc-labels";
 import { listPublishedDenials } from "@/lib/denial-queries";
 import { appUrl } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Denial Code Library: CARC Meanings and How to Fix Them",
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string }> }): Promise<Metadata> {
+  const { q } = await searchParams;
+  return { ...base, robots: { index: !q, follow: true } }; // search results pages stay out of Google
+}
+
+const base: Metadata = {
+  title: "Denial Code Library: CARC Descriptions and How to Fix Them",
   description: "Plain-English meanings of claim denial codes (CO, PR, OA, PI) with common causes, fix steps and Medicare vs. commercial payer differences, reviewed by certified billers.",
   alternates: { canonical: "/denials" },
 };
@@ -31,17 +37,25 @@ export default async function Denials({ searchParams }: { searchParams: Promise<
         <button className="btn" type="submit">Search</button>
       </form>
 
+      {!q && rows.length > 0 && (
+        <section style={{ marginBottom: 6 }}>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>Most searched codes</div>
+          <div className="chips">{POPULAR_DENIALS.map((c) => rows.find((r) => r.code === c)).filter((r): r is NonNullable<typeof r> => Boolean(r)).map((r) => (
+            <Link key={r.code} className="chip code" href={denialPath(r)} style={{ textDecoration: "none" }}>{r.groupCode}-{r.code}</Link>))}</div>
+        </section>
+      )}
       {q && <p className="muted small">{rows.length} result{rows.length === 1 ? "" : "s"} for “{q}”. <Link className="clear" href="/denials">Show all</Link></p>}
       {!rows.length && <div className="card"><p style={{ margin: 0 }}>{q ? "No denial code page matches that yet." : "Denial code pages are coming soon."} <Link className="clear" href="/ask">Ask our billers about it, free →</Link></p></div>}
 
       {byCat.map(({ k, items }) => (
         <section key={k} className="section" style={{ marginTop: 22 }}>
-          <h2 style={{ marginBottom: 4 }}>{DENIAL_CATEGORIES[k].label}</h2>
+          <h2 style={{ marginBottom: 4 }}><Link href={categoryPath(k)} style={{ color: "inherit", textDecoration: "none" }}>{DENIAL_CATEGORIES[k].label}</Link></h2>
           <p className="muted small" style={{ margin: "0 0 10px" }}>{DENIAL_CATEGORIES[k].desc}</p>
           <div className="denial-grid">
             {items.map((d) => (
               <Link key={d.code} href={denialPath(d)} className="denial-card">
                 <span className="denial-code">{d.groupCode}-{d.code}</span>
+                <strong className="small" style={{ color: "var(--ink)" }}>{carcLabel(d.code)}</strong>
                 <span className="small">{teaser(d.quickAnswer)}</span>
               </Link>
             ))}

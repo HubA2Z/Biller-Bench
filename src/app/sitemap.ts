@@ -3,6 +3,7 @@ import { and, desc, eq, ne } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { questionPath } from "@/lib/paths";
 import { appUrl } from "@/lib/site";
+import { DENIAL_CATEGORIES } from "@/lib/denials";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/experts`, changeFrequency: "monthly" },
     { url: `${base}/updates`, changeFrequency: "daily" },
     { url: `${base}/denials`, changeFrequency: "weekly", priority: 0.9 },
+    ...Object.keys(DENIAL_CATEGORIES).map((c) => ({ url: `${base}/denials/category/${c}`, changeFrequency: "weekly" as const, priority: 0.7 })),
     ...(await db.select({ slug: schema.denialCodes.slug, at: schema.denialCodes.updatedAt }).from(schema.denialCodes)
       .where(eq(schema.denialCodes.status, "PUBLISHED")).limit(2000))
       .map((d) => ({ url: `${base}/denials/${d.slug}`, lastModified: d.at, changeFrequency: "monthly" as const, priority: 0.8 })),

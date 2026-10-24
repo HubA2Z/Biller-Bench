@@ -1,6 +1,6 @@
 "use client";
 import { startTransition, useActionState, useState } from "react";
-import { submitApplication, submitContact, type InquiryState } from "@/app/actions/inquiries";
+import { submitApplication, submitContact, submitDenialHelp, type InquiryState } from "@/app/actions/inquiries";
 import { CAREER_ROLES, CONTACT_TOPICS } from "@/lib/company";
 import { PhiNotice } from "./PhiNotice";
 
@@ -40,6 +40,32 @@ export function ContactForm({ name = "", email = "", organization = "", topic }:
         <PhiNotice text={message} /></div>
       {state?.error && <ul className="errors" role="alert"><li>{state.error}</li></ul>}
       <div><button type="submit" className="btn" disabled={pending}>{pending ? "Sending…" : "Send message"}</button></div>
+    </form>
+  );
+}
+
+export function DenialHelpForm({ code }: { code: string }) {
+  const [state, action, pending] = useActionState<InquiryState, FormData>(submitDenialHelp, undefined);
+  const [message, setMessage] = useState("");
+  if (state?.ok) return <div className="phi ok" role="status"><strong>Got it.</strong> A certified biller will reply by email within one business day.</div>;
+  return (
+    <form className="form" noValidate onSubmit={submitWith(action)} style={{ position: "relative" }}>
+      <Trap />
+      <input type="hidden" name="code" value={code} />
+      <div className="row2">
+        <div className="field"><label htmlFor="dh-name">Your name <span className="req">*</span></label><input type="text" id="dh-name" name="name" autoComplete="name" required /></div>
+        <div className="field"><label htmlFor="dh-email">Work email <span className="req">*</span></label><input type="email" id="dh-email" name="email" autoComplete="email" required /></div>
+      </div>
+      <div className="row2">
+        <div className="field"><label htmlFor="dh-org">Practice or company</label><input type="text" id="dh-org" name="organization" autoComplete="organization" /></div>
+        <div className="field"><label htmlFor="dh-payer">Payer</label><input type="text" id="dh-payer" name="payer" placeholder="e.g. UHC, Medicare, Cigna" /></div>
+      </div>
+      <div className="field"><label htmlFor="dh-message">What happened? <span className="req">*</span></label>
+        <textarea id="dh-message" name="message" value={message} onChange={(e) => setMessage(e.target.value)} maxLength={3000} style={{ minHeight: 100 }}
+          placeholder="Codes and modifiers billed, the remark code, and what you've tried. No patient names, dates of birth or member IDs." required />
+        <PhiNotice text={message} /></div>
+      {state?.error && <ul className="errors" role="alert"><li>{state.error}</li></ul>}
+      <div><button type="submit" className="btn" disabled={pending}>{pending ? "Sending…" : `Ask about ${code}`}</button></div>
     </form>
   );
 }

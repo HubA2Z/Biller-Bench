@@ -13,6 +13,7 @@ import { startOfMonth } from "@/lib/queries";
 import { approveNpi, resolveFlag, setLeadStatus } from "@/app/actions/team";
 import { setInquiryStatus } from "@/app/actions/inquiries";
 import { CAREER_ROLES } from "@/lib/company";
+import { AUDIENCE_ROLES } from "@/lib/audience";
 import { SubmitButton } from "@/components/SubmitButton";
 import { TierChips, slaText } from "@/components/ui";
 
@@ -20,10 +21,11 @@ export const metadata: Metadata = { title: "Team queue", robots: { index: false 
 
 export default async function Team() {
   const me = await requireStaff();
-  const { questions: Q, users: U, answers: A, flags: F, serviceRequests: S, inquiries: I } = schema;
+  const { questions: Q, users: U, answers: A, flags: F, serviceRequests: S, inquiries: I, audienceResponses: AR } = schema;
   const AQ = alias(Q, "aq");
 
-  const [open, leads, reports, npiReview, [{ providers }], [{ askedThisMonth }], messages] = await Promise.all([
+  const since = new Date(Date.now() - 30 * 86400_000);
+  const [open, leads, reports, npiReview, [{ providers }], [{ askedThisMonth }], messages, roleCounts, buyerPages, [{ verifiedProviders }]] = await Promise.all([
     db.select({ q: Q, org: U.practiceName, name: U.name, plan: U.plan }).from(Q).innerJoin(U, eq(U.id, Q.authorId))
       .where(and(eq(Q.status, "OPEN"), eq(Q.removed, false))).orderBy(sql`${Q.dueAt} asc nulls last`).limit(200),
     db.select().from(S).where(eq(S.status, "NEW")).orderBy(desc(S.createdAt)).limit(100),
@@ -34,7 +36,14 @@ export default async function Team() {
     db.select({ providers: count() }).from(U).where(eq(U.role, "PROVIDER")),
     db.select({ askedThisMonth: count() }).from(Q).where(and(gte(Q.createdAt, startOfMonth()), eq(Q.removed, false))),
     db.select().from(I).where(eq(I.status, "NEW")).orderBy(desc(I.createdAt)).limit(100),
+    db.select({ role: AR.role, n: count(), yes: sql<number>`count(*) filter (where ${AR.wantsHelp})::int` }).from(AR).where(gte(AR.createdAt, since)).groupBy(AR.role),
+    // Pages where physicians and practice managers answered: what brings potential clients in.
+    db.select({ path: AR.path, n: count() }).from(AR)
+      .where(and(gte(AR.createdAt, since), sql`${AR.role} in ('physician','practice')`, isNotNull(AR.path)))
+      .groupBy(AR.path).orderBy(desc(count())).limit(8),
+    db.select({ verifiedProviders: count() }).from(U).where(and(eq(U.role, "PROVIDER"), isNotNull(U.npiVerifiedAt))),
   ]);
+  const totalAnswers = roleCounts.reduce((a, r) => a + r.n, 0);
   const overdue = open.filter(({ q }) => q.dueAt && q.dueAt < new Date()).length;
 
   return (
@@ -50,6 +59,22 @@ export default async function Team() {
         <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{leads.length}</b>new service requests</div>
         <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{messages.length}</b>new messages and applications</div>
       </div>
+
+      <section className="section" style={{ marginTop: 0, marginBottom: 22 }}>
+        <h2>Who’s visiting <span className="muted small" style={{ fontFamily: "var(--f-body)", fontWeight: 400 }}>· last 30 days · {totalAnswers} answer{totalAnswers === 1 ? "" : "s"} to “Who’s reading?” · {verifiedProviders} NPI-verified provider account{verifiedProviders === 1 ? "" : "s"}</span></h2>
+        {totalAnswers ? (
+          <div className="ruleset">
+            {Object.entries(AUDIENCE_ROLES).map(([k, v]) => {
+              const n = roleCounts.find((r) => r.role === k)?.n ?? 0;
+              const yes = roleCounts.find((r) => r.role === k)?.yes ?? 0;
+              return <div key={k}><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{Math.round((n / totalAnswers) * 100)}%</b>{v.label} <span className="muted">({n}{v.followUp ? ` · ${yes} wanted billing help` : ""})</span></div>;
+            })}
+          </div>
+        ) : <div className="empty">No answers yet. First-time visitors see a small “Who’s reading?” card after a few seconds.</div>}
+        {buyerPages.length > 0 && (
+          <div className="card" style={{ marginTop: 10 }}><div className="eyebrow" style={{ marginBottom: 6 }}>Pages where physicians and practice managers answered</div>
+            <div className="mini">{buyerPages.map((p) => <Link key={p.path} href={p.path!}>{p.path} <span className="muted">({p.n})</span></Link>)}</div></div>)}
+      </section>
 
       <section className="section" style={{ marginTop: 0 }}><h2>Open questions</h2>
         <div className="tablewrap"><table><thead><tr><th>Due</th><th>Question</th><th>Visibility</th><th>Practice</th><th></th></tr></thead><tbody>

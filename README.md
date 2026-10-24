@@ -146,6 +146,10 @@ npm run build
 
 ## Changelog
 
+**v0.11.0**: "Who's reading?" card for first-time visitors (bottom corner after 6 seconds, once per visitor, never blocks the page). Physicians and practices are then asked "Need billing help?", billers and billing companies "Looking for billing services or billing help?"; Yes opens the Contact form with the topic chosen. Answers are anonymous (role, page, yes/no) and summarized in the Team queue under "Who's visiting". Adds `drizzle/0007_audience.sql`.
+
+**v0.10.0**: SEO and leads from Search Console data: denial-page titles and Google descriptions use the official code description (`src/lib/carc-labels.ts`), a "Description" line, a no-account "Ask about this denial" form on every code page (goes to the team queue and the alert inbox), a free denial review offer, "More in this category" links, category hub pages (`/denials/category/…`), most-searched codes on the home page and library, and noindex for filtered/search URLs (`/?code=`, `/denials?q=`, `/updates?type=`).
+
 **v0.9.2**: smart paste in the article, denial-code and answer editors (Google Docs, Word, web pages and chat apps keep headings, bold, lists, links and tables; `src/lib/paste.ts`), a Tidy up button, and a more forgiving Markdown renderer (lists right under a paragraph, • and 1) lists, nested lists, dividers). Adds the `turndown` package.
 
 **v0.9.1**: 104 more denial code pages (114 in total) as drafts in `content/denials/`; related codes and question links show each code's one-line meaning.

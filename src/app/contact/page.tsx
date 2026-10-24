@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/contact" },
 };
 
-export default async function Contact({ searchParams }: { searchParams: Promise<{ topic?: string }> }) {
-  const { topic } = await searchParams;
+export default async function Contact({ searchParams }: { searchParams: Promise<{ topic?: string; from?: string }> }) {
+  const { topic, from } = await searchParams;
   const c = company();
   const social = socialLinks();
   const user = await getCurrentUser();
@@ -22,7 +22,7 @@ export default async function Contact({ searchParams }: { searchParams: Promise<
       <div className="pagehead">
         <span className="eyebrow">Contact us</span>
         <h1>Talk to the BillerBench team</h1>
-        <p className="muted" style={{ maxWidth: "66ch", margin: 0 }}>Send us a message and we’ll reply by email within one business day.</p>
+        <p className="muted" style={{ maxWidth: "66ch", margin: 0 }}>{from === "card" ? "Tell us a little about what you need and a team lead will reply by email within one business day." : "Send us a message and we’ll reply by email within one business day."}</p>
       </div>
 
       <div className="contact-grid">

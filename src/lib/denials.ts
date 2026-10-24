@@ -15,6 +15,7 @@
  *   ...
  */
 import { scanPHI } from "./phi";
+import { CARC_LABELS } from "./carc-labels";
 
 export const DENIAL_CATEGORIES = {
   patient: { label: "Patient responsibility", desc: "Deductible, coinsurance and copay amounts the patient owes." },
@@ -46,6 +47,26 @@ export function denialTeaser(quickAnswer: string) {
   const first = quickAnswer.split(/(?<=\.)\s/)[0].replace(/^[A-Z]{2}-\w+ means (that )?/, "");
   return first.charAt(0).toUpperCase() + first.slice(1);
 }
+
+export const carcLabel = (code: string) => CARC_LABELS[normalizeCode(code)] ?? null;
+
+/** Google title, matching searches like "co 216 denial code description". */
+export function denialSeoTitle(d: { groupCode: string; code: string; title: string }) {
+  const label = carcLabel(d.code);
+  return label ? `${d.groupCode}-${d.code} Denial Code Description: ${label}` : d.title;
+}
+
+/** Google description: the official wording first, then what the page offers (about 155 characters). */
+export function denialSeoDescription(d: { groupCode: string; code: string; quickAnswer: string }) {
+  const label = carcLabel(d.code);
+  const text = label
+    ? `${d.groupCode}-${d.code}: ${label}. What it means, common causes and how to fix and appeal it, reviewed by certified billers.`
+    : d.quickAnswer;
+  return text.length <= 158 ? text : text.slice(0, 155).replace(/\s+\S*$/, "") + "…";
+}
+
+/** Category hub page address. */
+export const categoryPath = (cat: string) => `/denials/category/${cat}`;
 
 export const defaultTitle = (group: string, code: string) => `${group}-${normalizeCode(code)} Denial Code: Meaning, Causes and How to Fix It`;
 

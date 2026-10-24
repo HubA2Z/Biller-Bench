@@ -5,7 +5,12 @@ import { db, schema } from "@/db";
 import { ARTICLE_KINDS, articlePath, formatDate, type ArticleKind } from "@/lib/articles";
 import { getCurrentUser, isAdmin } from "@/lib/auth";
 
-export const metadata: Metadata = {
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }): Promise<Metadata> {
+  const sp = await searchParams;
+  return { ...base, robots: { index: !Object.values(sp).some(Boolean), follow: true } }; // filtered lists stay out of Google
+}
+
+const base: Metadata = {
   title: "Medical Coding and Payer Policy Updates",
   description: "CPT, HCPCS and ICD-10 changes, payer policy updates and billing guides from certified medical billers.",
   alternates: { canonical: "/updates" },

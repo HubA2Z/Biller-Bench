@@ -72,3 +72,15 @@ describe("tidyText", () => {
     expect(tidyText("# **Title**")).toBe("# Title");
   });
 });
+
+import { denialSeoDescription, denialSeoTitle } from "../src/lib/denials";
+describe("denial SEO text", () => {
+  it("builds titles and descriptions from the official label", () => {
+    const d = { groupCode: "CO", code: "216", title: "x", quickAnswer: "y" };
+    expect(denialSeoTitle(d)).toBe("CO-216 Denial Code Description: Based on Findings of a Review Organization");
+    const desc = denialSeoDescription(d);
+    expect(desc.startsWith("CO-216: Based on Findings of a Review Organization.")).toBe(true);
+    expect(desc.length).toBeLessThanOrEqual(158);
+    expect(denialSeoTitle({ groupCode: "CO", code: "999", title: "Fallback" })).toBe("Fallback");
+  });
+});
