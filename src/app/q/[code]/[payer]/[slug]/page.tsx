@@ -57,7 +57,7 @@ export default async function PublicQuestion({ params, searchParams }: { params:
       answerCount: expert.length,
       upvoteCount: data.q.voteCount,
       datePublished: data.q.createdAt.toISOString(),
-      author: { "@type": "Organization", name: "BillerBench member" },
+      author: { "@type": "Organization", name: data.q.source === "team" ? "BillerBench" : "BillerBench member" },
       ...(accepted ? { acceptedAnswer: answerLd(accepted.a, accepted.author.name, canonical) } : {}),
       suggestedAnswer: expert.filter((x) => x !== accepted).map((x) => answerLd(x.a, x.author.name, canonical)),
     },

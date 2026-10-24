@@ -17,12 +17,17 @@ export const SPECIALTIES = [
 export const EHR_SYSTEMS = ["Epic","athenahealth","eClinicalWorks","Tebra (Kareo)","NextGen","AdvancedMD","CMD"] as const;
 
 export const PAYER_GROUPS: Record<string, readonly string[]> = {
-  Medicare: MAC_JURISDICTIONS,
+  Medicare: [...MAC_JURISDICTIONS, "All jurisdictions"],
   Medicaid: STATES,
-  Commercial: COMMERCIAL_PAYERS,
+  Commercial: [...COMMERCIAL_PAYERS, "All commercial payers"],
   TRICARE: ["East", "West"],
   "Workers' Comp": STATES,
+  /** For team Q&As that apply to every payer. */
+  General: ["All payers"],
 };
+
+/** Team Q&As can apply nationwide. */
+export const stateLabel = (s: string) => (s === "US" ? "All states" : s);
 
 export function payerLabel(group: string, name: string) {
   return group === "Commercial" ? name : `${group} · ${name}`;

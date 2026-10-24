@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const Q = schema.questions;
   const rows = await db.select().from(Q)
-    .where(and(eq(Q.isPrivate, false), eq(Q.removed, false), eq(Q.hidden, false), ne(Q.status, "PENDING_PAYMENT"), ne(Q.status, "OPEN")))
+    .where(and(eq(Q.isPrivate, false), eq(Q.draft, false), eq(Q.removed, false), eq(Q.hidden, false), ne(Q.status, "PENDING_PAYMENT"), ne(Q.status, "OPEN")))
     .orderBy(desc(Q.updatedAt)).limit(45000);
   const base = appUrl();
   return [
@@ -18,6 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/services`, changeFrequency: "monthly" },
     { url: `${base}/experts`, changeFrequency: "monthly" },
     { url: `${base}/updates`, changeFrequency: "daily" },
+    { url: `${base}/questions`, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/denials`, changeFrequency: "weekly", priority: 0.9 },
     ...Object.keys(DENIAL_CATEGORIES).map((c) => ({ url: `${base}/denials/category/${c}`, changeFrequency: "weekly" as const, priority: 0.7 })),
     ...(await db.select({ slug: schema.denialCodes.slug, at: schema.denialCodes.updatedAt }).from(schema.denialCodes)

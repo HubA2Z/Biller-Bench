@@ -41,7 +41,7 @@ export default async function UpdatePage({ params, searchParams }: { params: Pro
   const Q = schema.questions, A = schema.articles;
   const codeArr = a.codes.length ? sql`ARRAY[${sql.join(a.codes.map((c) => sql`${c}`), sql`, `)}]::text[]` : null;
   const [related, more] = await Promise.all([
-    codeArr ? db.select().from(Q).where(and(eq(Q.isPrivate, false), eq(Q.removed, false), eq(Q.hidden, false), ne(Q.status, "PENDING_PAYMENT"), ne(Q.status, "OPEN"), sql`${Q.codes} && ${codeArr}`)).orderBy(desc(Q.voteCount)).limit(5) : Promise.resolve([]),
+    codeArr ? db.select().from(Q).where(and(eq(Q.isPrivate, false), eq(Q.draft, false), eq(Q.removed, false), eq(Q.hidden, false), ne(Q.status, "PENDING_PAYMENT"), ne(Q.status, "OPEN"), sql`${Q.codes} && ${codeArr}`)).orderBy(desc(Q.voteCount)).limit(5) : Promise.resolve([]),
     db.select().from(A).where(and(eq(A.status, "PUBLISHED"), ne(A.id, a.id))).orderBy(desc(A.publishedAt)).limit(3),
   ]);
   const jsonLd = a.status === "PUBLISHED" ? {
@@ -69,7 +69,7 @@ export default async function UpdatePage({ params, searchParams }: { params: Pro
         </div>
         {(a.codes.length > 0 || a.payers.length > 0 || a.specialty) && (
           <div className="chips" style={{ marginBottom: 18 }}>
-            {a.codes.map((c) => <Link key={c} className="chip code" href={`/?code=${encodeURIComponent(c)}`} style={{ textDecoration: "none" }}>{c}</Link>)}
+            {a.codes.map((c) => <Link key={c} className="chip code" href={`/questions?code=${encodeURIComponent(c)}`} style={{ textDecoration: "none" }}>{c}</Link>)}
             {a.payers.map((p) => <span key={p} className="chip payer">{p}</span>)}
             {a.specialty && <span className="chip spec">{a.specialty}</span>}
           </div>)}

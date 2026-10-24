@@ -71,11 +71,12 @@ const denialHelpSchema = z.object({
   ...base,
   organization: opt(160),
   payer: opt(80),
-  code: z.string().trim().regex(/^[A-Z]{2}-[A-Z]?\d{1,3}$/, "Unknown denial code."),
+  code: z.string().trim().regex(/^[A-Z]{2}-[A-Z]?\d{1,3}$/, "Unknown denial code.").optional().or(z.literal("")),
+  codes: opt(120),
   message: z.string().trim().min(15, "Tell us a little about the claim (at least 15 characters).").max(3000),
 });
 
-/** "Ask about this denial" on a Denial Code Library page: no account needed. */
+/** Quick questions without an account: "Ask about this denial" on code pages and the /ask page. */
 export async function submitDenialHelp(_: InquiryState, form: FormData): Promise<InquiryState> {
   if (isBot(form)) return { ok: true };
   const parsed = denialHelpSchema.safeParse(Object.fromEntries(form));
@@ -84,9 +85,11 @@ export async function submitDenialHelp(_: InquiryState, form: FormData): Promise
   if (scanPHI(d.message).length) return { error: PHI_ERROR };
   const limit = await hitIp("inquiry", LIMITS.inquiryIp);
   if (!limit.ok) return { error: waitMessage(limit) };
+  const details = [d.payer && `Payer: ${d.payer}`, d.codes && `Codes: ${d.codes}`].filter(Boolean).join("\n");
   await save("CONTACT", {
     name: d.name, email: d.email, phone: d.phone, organization: d.organization,
-    topic: `Denial help: ${d.code}`, message: d.payer ? `Payer: ${d.payer}\n\n${d.message}` : d.message,
+    topic: d.code ? `Denial help: ${d.code}` : "Billing question", message: details ? `${details}\n\n${d.message}` : d.message,
+    shareOk: form.get("shareOk") === "on",
   });
   return { ok: true };
 }

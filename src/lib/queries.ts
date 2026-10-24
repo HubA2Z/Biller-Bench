@@ -11,8 +11,10 @@ export function visibleTo(user: User | null): SQL {
   const paid = user ? or(ne(Q.status, "PENDING_PAYMENT"), eq(Q.authorId, user.id))! : ne(Q.status, "PENDING_PAYMENT");
   const base = and(eq(Q.removed, false), isStaff(user) ? ne(Q.status, "PENDING_PAYMENT") : paid)!;
   if (isStaff(user)) return base;
+  // Drafts (team questions waiting for review) stay hidden from everyone else.
+  const notDraft = eq(Q.draft, false);
   const vis = user ? or(eq(Q.isPrivate, false), eq(Q.authorId, user.id))! : eq(Q.isPrivate, false);
-  return and(base, vis, user ? or(eq(Q.hidden, false), eq(Q.authorId, user.id))! : eq(Q.hidden, false))!;
+  return and(base, notDraft, vis, user ? or(eq(Q.hidden, false), eq(Q.authorId, user.id))! : eq(Q.hidden, false))!;
 }
 
 export type ListFilters = {
@@ -97,7 +99,7 @@ export async function similarQuestions(title: string, codes: string[]) {
   for (const w of words) if (w.length > 3) conds.push(ilike(Q.title, `%${w}%`));
   if (!conds.length) return [];
   const rows = await db.select().from(Q)
-    .where(and(eq(Q.isPrivate, false), eq(Q.removed, false), eq(Q.hidden, false), ne(Q.status, "PENDING_PAYMENT"), or(...conds)))
+    .where(and(eq(Q.isPrivate, false), eq(Q.draft, false), eq(Q.removed, false), eq(Q.hidden, false), ne(Q.status, "PENDING_PAYMENT"), or(...conds)))
     .orderBy(desc(Q.voteCount)).limit(30);
   return rows.map((q) => {
     const qt = new Set([...tokens(q.title), ...q.codes.map((c) => c.toLowerCase()), ...q.modifiers.map((m) => m.toLowerCase())]);

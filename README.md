@@ -146,6 +146,8 @@ npm run build
 
 ## Changelog
 
+**v0.12.0**: library-first home page (denial search, most-searched codes, categories, updates, "Recently answered" once 10+ public answers exist); the question list moved to `/questions` (old `/?code=` links redirect); asking without an account on `/ask` with an optional "publish anonymously" consent; **Publish as Q&A** from team messages (`/team/qa/new`); Q&A drafts with review/publish/delete in the Team queue; 20 common questions in `content/questions/` loaded as drafts on deploy; questions show "BillerBench reader" or "Common question" instead of a person. Adds `drizzle/0008_qa_sources.sql`.
+
 **v0.11.0**: "Who's reading?" card for first-time visitors (bottom corner after 6 seconds, once per visitor, never blocks the page). Physicians and practices are then asked "Need billing help?", billers and billing companies "Looking for billing services or billing help?"; Yes opens the Contact form with the topic chosen. Answers are anonymous (role, page, yes/no) and summarized in the Team queue under "Who's visiting". Adds `drizzle/0007_audience.sql`.
 
 **v0.10.0**: SEO and leads from Search Console data: denial-page titles and Google descriptions use the official code description (`src/lib/carc-labels.ts`), a "Description" line, a no-account "Ask about this denial" form on every code page (goes to the team queue and the alert inbox), a free denial review offer, "More in this category" links, category hub pages (`/denials/category/…`), most-searched codes on the home page and library, and noindex for filtered/search URLs (`/?code=`, `/denials?q=`, `/updates?type=`).

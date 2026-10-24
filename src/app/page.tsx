@@ -1,155 +1,115 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { POPULAR_DENIALS } from "@/lib/carc-labels";
-import { carcLabel, denialPath } from "@/lib/denials";
-import { publishedDenialsFor } from "@/lib/denial-queries";
-import { getCurrentUser } from "@/lib/auth";
-import { listQuestions, type ListFilters } from "@/lib/queries";
-import { PAYER_GROUPS, SPECIALTIES, STATES } from "@/lib/taxonomy";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { db, schema } from "@/db";
+import { getCurrentUser, isStaff } from "@/lib/auth";
 import { ANSWER_TIME } from "@/lib/plans";
 import { TAGLINE } from "@/lib/company";
+import { POPULAR_DENIALS } from "@/lib/carc-labels";
+import { DENIAL_CATEGORIES, carcLabel, categoryPath, denialPath, type DenialCategory } from "@/lib/denials";
+import { listPublishedDenials } from "@/lib/denial-queries";
+import { ARTICLE_KINDS, articlePath } from "@/lib/articles";
 import { questionPath } from "@/lib/paths";
 import { timeAgo } from "@/lib/sla";
-import { AutoSubmitForm } from "@/components/AutoSubmitForm";
-import { desc, eq } from "drizzle-orm";
-import { db, schema } from "@/db";
-import { ARTICLE_KINDS, articlePath } from "@/lib/articles";
-import { QuestionChips, TierChips, slaText } from "@/components/ui";
 
-type SP = Record<string, string | undefined>;
+/** The answered-questions block appears once there's enough to show. */
+const SHOW_QUESTIONS_AT = 10;
 
-/** Filtered or paged lists (/?code=…, /?page=2) are the same page to Google: point them at "/" and keep them out of the index. */
-export async function generateMetadata({ searchParams }: { searchParams: Promise<SP> }): Promise<Metadata> {
-  const sp = await searchParams;
-  const filtered = Object.values(sp).some(Boolean);
-  return { alternates: { canonical: "/" }, robots: { index: !filtered, follow: true } };
-}
-
-export default async function Home({ searchParams }: { searchParams: Promise<SP> }) {
-  const sp = await searchParams;
+export default async function Home() {
   const user = await getCurrentUser();
-  const f: ListFilters = {
-    q: sp.q, code: sp.code, payer: sp.payer, state: sp.state, specialty: sp.specialty,
-    status: (["answered", "open", "mine"].includes(sp.status ?? "") ? sp.status : "all") as ListFilters["status"],
-    sort: sp.sort === "votes" ? "votes" : "recent", page: Number(sp.page) || 1,
-  };
-  const [{ rows, total, page, pages }, latest, popular] = await Promise.all([
-    listQuestions(f, user),
-    db.select().from(schema.articles).where(eq(schema.articles.status, "PUBLISHED")).orderBy(desc(schema.articles.publishedAt)).limit(3),
-    publishedDenialsFor(POPULAR_DENIALS.slice(0, 8)),
+  const Q = schema.questions, A = schema.articles;
+  const publicAnswered = and(eq(Q.isPrivate, false), eq(Q.draft, false), eq(Q.removed, false), eq(Q.hidden, false), inArray(Q.status, ["ANSWERED", "SOLVED"]));
+  const [denials, latest, recentQs, [{ answered }]] = await Promise.all([
+    listPublishedDenials(),
+    db.select().from(A).where(eq(A.status, "PUBLISHED")).orderBy(desc(A.publishedAt)).limit(4),
+    db.select().from(Q).where(publicAnswered).orderBy(desc(Q.createdAt)).limit(5),
+    db.select({ answered: count() }).from(Q).where(publicAnswered),
   ]);
-
-  const link = (patch: SP) => {
-    const merged: SP = { ...sp, page: undefined, ...patch };
-    const p = new URLSearchParams(Object.entries(merged).filter((e): e is [string, string] => !!e[1]));
-    const s = p.toString();
-    return s ? `/?${s}` : "/";
-  };
-  const statuses: [string, string][] = [["all", "All"], ["answered", "Answered"], ["open", "Waiting"], ...(user?.role === "PROVIDER" ? [["mine", "Mine"] as [string, string]] : [])];
-  const active = f.code || f.payer || f.state || f.specialty || f.status !== "all";
+  const popular = POPULAR_DENIALS.map((c) => denials.find((d) => d.code === c)).filter((d): d is NonNullable<typeof d> => Boolean(d));
+  const cats = (Object.keys(DENIAL_CATEGORIES) as DenialCategory[]).map((k) => ({ k, n: denials.filter((d) => d.category === k).length })).filter((c) => c.n > 0);
 
   return (
-    <div className="grid">
-      <aside className="rail">
-        <details open>
-          <summary className="eyebrow">Filter questions</summary>
-          <div className="side" style={{ marginTop: 12 }}>
-            <div className="facet"><label>Status</label>
-              <div className="seg">{statuses.map(([k, l]) => <Link key={k} href={link({ status: k === "all" ? undefined : k })} aria-pressed={f.status === k}>{l}</Link>)}</div>
-            </div>
-            <AutoSubmitForm className="side">
-              {f.q && <input type="hidden" name="q" value={f.q} />}
-              {f.status !== "all" && <input type="hidden" name="status" value={f.status} />}
-              <div className="facet"><label htmlFor="fCode">Code or modifier</label><input id="fCode" name="code" placeholder="e.g. 99214 or 25" defaultValue={f.code} /></div>
-              <div className="facet"><label htmlFor="fPayer">Payer</label>
-                <select id="fPayer" name="payer" defaultValue={f.payer ?? ""}>
-                  <option value="">All payers</option>
-                  {Object.entries(PAYER_GROUPS).map(([g, names]) => (
-                    <optgroup key={g} label={g}>
-                      <option value={g}>All {g}</option>
-                      {g !== "Medicaid" && g !== "Workers' Comp" && names.map((n) => <option key={n} value={`${g}|${n}`}>{n}</option>)}
-                    </optgroup>
-                  ))}
-                </select></div>
-              <div className="facet"><label htmlFor="fState">Practice state</label>
-                <select id="fState" name="state" defaultValue={f.state ?? ""}><option value="">All states</option>{STATES.map((s) => <option key={s}>{s}</option>)}</select></div>
-              <div className="facet"><label htmlFor="fSpec">Specialty</label>
-                <select id="fSpec" name="specialty" defaultValue={f.specialty ?? ""}><option value="">All specialties</option>{SPECIALTIES.map((s) => <option key={s}>{s}</option>)}</select></div>
-              <button className="btn ghost sm" type="submit">Apply filters</button>
-            </AutoSubmitForm>
-            {active && <Link className="clear" href={f.q ? `/?q=${encodeURIComponent(f.q)}` : "/"}>Clear filters</Link>}
-          </div>
-        </details>
-        {popular.length > 0 && (
-          <div className="card" style={{ padding: 16 }}>
-            <div className="eyebrow" style={{ marginBottom: 10 }}>Most searched denial codes</div>
-            <div className="mini">{popular.map((d) => <Link key={d.code} href={denialPath(d)}><strong className="denial-code" style={{ fontSize: 13, marginRight: 6 }}>{d.groupCode}-{d.code}</strong>{carcLabel(d.code)}</Link>)}</div>
-            <Link className="clear" href="/denials" style={{ display: "inline-block", marginTop: 10 }}>All denial codes →</Link>
-          </div>
-        )}
-        {latest.length > 0 && (
-          <div className="card" style={{ padding: 16 }}>
-            <div className="eyebrow" style={{ marginBottom: 10 }}>Latest updates</div>
-            <div className="mini">{latest.map((a) => <Link key={a.id} href={articlePath(a)}><span className={`kind ${a.kind}`} style={{ marginRight: 6 }}>{ARTICLE_KINDS[a.kind].label}</span>{a.title}</Link>)}</div>
-            <Link className="clear" href="/updates" style={{ display: "inline-block", marginTop: 10 }}>All updates →</Link>
-          </div>
-        )}
-      </aside>
-
-      <section style={{ minWidth: 0 }}>
-        {!user && (
-          <div className="hero">
-            <h1>{TAGLINE}</h1>
-            <p>Ask about claim denials, CPT and ICD-10 coding, modifiers and payer rules. A certified biller on our team answers within {ANSWER_TIME.label}, with the payer policy behind the answer.</p>
-            <div className="cta"><Link className="btn" href="/signup">Ask a question, free</Link><Link className="btn ghost" href="/services">Billing services for practices</Link></div>
-            <ul><li>Free for providers</li><li>Public or private questions</li><li>No patient information, ever</li></ul>
-          </div>
-        )}
-        {user?.role === "PROVIDER" && (
-          <div className="banner" style={{ marginBottom: 14 }}>
-            <span><strong>Free for providers</strong></span>
-            <span className="muted">Certified billers answer within {ANSWER_TIME.label}, public or private.</span>
-            <Link className="clear" href="/services">Need billing help? See our services →</Link>
-          </div>
-        )}
-        <form className="searchbar" method="get">
-          <input type="search" name="q" defaultValue={f.q} placeholder="Search denials, codes, payers… try “CO-97” or “G2211”" aria-label="Search questions" />
-          {Object.entries(sp).filter(([k, v]) => v && !["q", "page"].includes(k)).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-          <Link className="btn" href="/ask">Ask our billers</Link>
+    <>
+      <section className="home-hero">
+        <span className="eyebrow">Free for practices and billers</span>
+        <h1>{TAGLINE}</h1>
+        <p>Look up any claim denial code, read the fix, or ask our certified billers. Answers within {ANSWER_TIME.label}, no account needed.</p>
+        <form className="searchbar home-search" method="get" action="/denials">
+          <input type="search" name="q" placeholder="Look up a denial code, e.g. CO-97, or a word like “timely filing”" aria-label="Search denial codes" />
+          <button className="btn" type="submit">Search</button>
         </form>
-        <div className="listhead">
-          <span className="muted small"><strong style={{ color: "var(--ink)" }}>{total}</strong> question{total === 1 ? "" : "s"}</span>
-          <div className="sort">
-            <Link href={link({ sort: undefined })} aria-pressed={f.sort === "recent"}>Newest</Link>
-            <Link href={link({ sort: "votes" })} aria-pressed={f.sort === "votes"}>Most helpful</Link>
-          </div>
+        <div className="cta">
+          <Link className="btn ghost" href="/ask">Ask a billing question</Link>
+          {!isStaff(user) && <Link className="clear" href="/services?service=audit#request">Free denial review for your practice →</Link>}
         </div>
-        <div className="qlist">
-          {rows.length === 0 && <div className="empty">No questions match. <Link className="clear" href="/">Clear filters</Link> or <Link className="clear" href="/ask">ask our team</Link>.</div>}
-          {rows.map(({ q, authorName, authorOrg, authorPlan, replies }) => {
-            const s = slaText(q);
-            const st = q.status === "SOLVED" ? "solved" : q.status === "OPEN" ? "open" : "";
-            if (q.hidden) return <div key={q.id} className="qrow" style={{ cursor: "default" }}><div className="stat open"><strong>–</strong>hidden</div><div className="muted small">Your question is hidden while our team checks a PHI report.</div></div>;
-            return (
-              <Link key={q.id} className="qrow" href={questionPath(q)}>
-                <div className={`stat ${st}`}><strong>{replies}</strong>{q.status === "SOLVED" ? "solved" : replies === 1 ? "reply" : "replies"}</div>
-                <div style={{ minWidth: 0 }}>
-                  <h3>{q.title}</h3>
-                  <div className="chips"><TierChips q={q} authorPlan={authorPlan} /><QuestionChips q={q} /></div>
-                  <div className="meta"><span className={`sla ${s.cls}`}>{s.text}</span><span>{authorName}{authorOrg ? `, ${authorOrg}` : ""} · {q.state}</span><span>{timeAgo(q.createdAt)}</span></div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-        {pages > 1 && (
-          <div className="pager">
-            {page > 1 && <Link href={link({ page: String(page - 1) })}>← Newer</Link>}
-            <span className="muted">Page {page} of {pages}</span>
-            {page < pages && <Link href={link({ page: String(page + 1) })}>Older →</Link>}
-          </div>
-        )}
       </section>
-    </div>
+
+      {popular.length > 0 && (
+        <section className="section">
+          <div className="sechead"><h2>Most searched denial codes</h2><Link className="clear" href="/denials">All {denials.length} codes →</Link></div>
+          <div className="denial-grid">
+            {popular.slice(0, 8).map((d) => (
+              <Link key={d.code} href={denialPath(d)} className="denial-card">
+                <span className="denial-code">{d.groupCode}-{d.code}</span>
+                <strong className="small" style={{ color: "var(--ink)" }}>{carcLabel(d.code)}</strong>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {cats.length > 0 && (
+        <section className="section">
+          <div className="sechead"><h2>Browse denials by category</h2></div>
+          <div className="cat-grid">
+            {cats.map(({ k, n }) => (
+              <Link key={k} href={categoryPath(k)} className="cat-card">
+                <strong>{DENIAL_CATEGORIES[k].label}</strong>
+                <span className="small muted">{n} code{n === 1 ? "" : "s"} · {DENIAL_CATEGORIES[k].desc}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="home-cols">
+        <section className="section">
+          <div className="sechead"><h2>Latest coding and payer updates</h2><Link className="clear" href="/updates">All updates →</Link></div>
+          {latest.length ? (
+            <div className="card alist" style={{ padding: 0 }}>
+              {latest.map((a) => (
+                <Link key={a.id} href={articlePath(a)} className="arow">
+                  <span className={`kind ${a.kind}`}>{ARTICLE_KINDS[a.kind].label}</span>
+                  <h3>{a.title}</h3>
+                  <p>{a.summary}</p>
+                </Link>
+              ))}
+            </div>
+          ) : <div className="card"><p className="muted" style={{ margin: 0 }}>Updates are coming soon.</p></div>}
+        </section>
+
+        <section className="section">
+          {answered >= SHOW_QUESTIONS_AT ? (
+            <>
+              <div className="sechead"><h2>Recently answered</h2><Link className="clear" href="/questions">All {answered} questions →</Link></div>
+              <div className="card mini" style={{ padding: 16 }}>
+                {recentQs.map((q) => <Link key={q.id} href={questionPath(q)}>{q.title} <span className="muted small">· {timeAgo(q.createdAt)}</span></Link>)}
+              </div>
+            </>
+          ) : <div className="sechead"><h2>Ask our billers</h2></div>}
+          <div className="card" style={{ marginTop: 12 }}>
+            <h3 style={{ margin: "0 0 6px" }}>Stuck on a claim?</h3>
+            <p className="small muted" style={{ margin: "0 0 12px" }}>Tell us the codes, payer and denial (no patient details). A certified biller replies within {ANSWER_TIME.label}. Free, no account needed.</p>
+            <Link className="btn sm" href="/ask">Ask a question</Link>
+          </div>
+        </section>
+      </div>
+
+      {!isStaff(user) && (
+        <div className="offer">
+          <div><span className="eyebrow">For practices</span><h3>Free denial review</h3><p>Send your most frequent denial codes and we’ll show you what’s causing them and how to stop them.</p><Link className="btn sm" href="/services?service=audit#request">Get a free review</Link></div>
+          <div><span className="eyebrow">Want it handled?</span><h3>Billing services</h3><p>Full billing, eligibility, prior authorization, appeals, AR recovery and credentialing by certified billers.</p><Link className="btn sm ghost" href="/services">See services</Link></div>
+        </div>
+      )}
+    </>
   );
 }

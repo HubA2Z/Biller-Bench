@@ -5,6 +5,7 @@ import { isStaff } from "@/lib/auth";
 import { renderMarkdown } from "@/lib/markdown";
 import { questionPath } from "@/lib/paths";
 import { timeAgo } from "@/lib/sla";
+import { stateLabel } from "@/lib/taxonomy";
 import { ARTICLE_KINDS } from "@/lib/articles";
 import { denialTeaser } from "@/lib/denials";
 import { acceptAnswer, reportPhi, toggleVote } from "@/app/actions/questions";
@@ -32,8 +33,9 @@ export function QuestionView({ data, user, notice, updates = [], denials = [] }:
 
   return (
     <article>
-      <Link className="back" href="/">← All questions</Link>
+      <Link className="back" href="/questions">← All questions</Link>
       {notice && <div className="phi ok" style={{ marginBottom: 12 }}>{notice}</div>}
+      {q.draft && <div className="banner" style={{ marginBottom: 12 }}><strong>Draft</strong><span className="muted">Only the team can see this Q&amp;A until it’s published.</span>{staff && <Link className="clear" href={`/team/qa/${q.id}`}>Review →</Link>}</div>}
       {q.hidden && <div className="hiddenpost">This question is hidden while our team checks a PHI report{staff ? ". Resolve it in the team queue." : "."}</div>}
       <div className="qhead">
         <h1>{q.title}</h1>
@@ -54,7 +56,9 @@ export function QuestionView({ data, user, notice, updates = [], denials = [] }:
         </div>
         <div style={{ minWidth: 0 }}>
           <div className="body" dangerouslySetInnerHTML={{ __html: renderMarkdown(q.body) }} />
-          <div className="byline">Asked {timeAgo(q.createdAt)} by {author.name}{author.practiceName ? `, ${author.practiceName}` : ""} · {q.state} <Badge user={author} /></div>
+          <div className="byline">{q.source === "member"
+            ? <>Asked {timeAgo(q.createdAt)} by {author.name}{author.practiceName ? `, ${author.practiceName}` : ""} · {stateLabel(q.state)} <Badge user={author} /></>
+            : q.source === "team" ? <>Common question · answered by the BillerBench team</> : <>Asked by a BillerBench reader · {timeAgo(q.createdAt)}</>}</div>
           {user && <form action={reportPhi} className="postactions"><input type="hidden" name="questionId" value={q.id} /><input type="hidden" name="path" value={path} /><button className="linkbtn">Report PHI</button></form>}
         </div>
       </div>

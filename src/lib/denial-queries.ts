@@ -38,7 +38,7 @@ export async function questionsMentioning(code: string, limit = 6) {
   if (!/^[A-Z]?\d{1,3}$/.test(code)) return [];
   const pattern = `(\\m(co|pr|oa|pi)[- ]?|\\mcarc ?#?|denial code #?)0*${code.toLowerCase()}\\M`;
   return db.select().from(Q).where(and(
-    eq(Q.isPrivate, false), eq(Q.removed, false), eq(Q.hidden, false), ne(Q.status, "PENDING_PAYMENT"), ne(Q.status, "OPEN"),
+    eq(Q.isPrivate, false), eq(Q.draft, false), eq(Q.removed, false), eq(Q.hidden, false), ne(Q.status, "PENDING_PAYMENT"), ne(Q.status, "OPEN"),
     sql`(${Q.title} ~* ${pattern} or ${Q.body} ~* ${pattern})`,
   )).orderBy(sql`${Q.voteCount} desc`).limit(limit);
 }

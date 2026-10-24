@@ -12,6 +12,7 @@ import { timeAgo } from "@/lib/sla";
 import { startOfMonth } from "@/lib/queries";
 import { approveNpi, resolveFlag, setLeadStatus } from "@/app/actions/team";
 import { setInquiryStatus } from "@/app/actions/inquiries";
+import { setQAStatus } from "@/app/actions/qa";
 import { CAREER_ROLES } from "@/lib/company";
 import { AUDIENCE_ROLES } from "@/lib/audience";
 import { SubmitButton } from "@/components/SubmitButton";
@@ -22,10 +23,11 @@ export const metadata: Metadata = { title: "Team queue", robots: { index: false 
 export default async function Team() {
   const me = await requireStaff();
   const { questions: Q, users: U, answers: A, flags: F, serviceRequests: S, inquiries: I, audienceResponses: AR } = schema;
+  const QD = schema.questions;
   const AQ = alias(Q, "aq");
 
   const since = new Date(Date.now() - 30 * 86400_000);
-  const [open, leads, reports, npiReview, [{ providers }], [{ askedThisMonth }], messages, roleCounts, buyerPages, [{ verifiedProviders }]] = await Promise.all([
+  const [open, leads, reports, npiReview, [{ providers }], [{ askedThisMonth }], messages, roleCounts, buyerPages, [{ verifiedProviders }], qaDrafts] = await Promise.all([
     db.select({ q: Q, org: U.practiceName, name: U.name, plan: U.plan }).from(Q).innerJoin(U, eq(U.id, Q.authorId))
       .where(and(eq(Q.status, "OPEN"), eq(Q.removed, false))).orderBy(sql`${Q.dueAt} asc nulls last`).limit(200),
     db.select().from(S).where(eq(S.status, "NEW")).orderBy(desc(S.createdAt)).limit(100),
@@ -42,6 +44,7 @@ export default async function Team() {
       .where(and(gte(AR.createdAt, since), sql`${AR.role} in ('physician','practice')`, isNotNull(AR.path)))
       .groupBy(AR.path).orderBy(desc(count())).limit(8),
     db.select({ verifiedProviders: count() }).from(U).where(and(eq(U.role, "PROVIDER"), isNotNull(U.npiVerifiedAt))),
+    db.select().from(QD).where(and(eq(QD.draft, true), eq(QD.removed, false))).orderBy(desc(QD.createdAt)).limit(100),
   ]);
   const totalAnswers = roleCounts.reduce((a, r) => a + r.n, 0);
   const overdue = open.filter(({ q }) => q.dueAt && q.dueAt < new Date()).length;
@@ -114,13 +117,35 @@ export default async function Team() {
             {(m.experience || m.link) && <div className="small muted">{m.experience}{m.experience && m.link ? " · " : ""}{m.link && /^https:\/\//i.test(m.link) ? <a href={m.link} target="_blank" rel="noopener noreferrer nofollow">Profile / resume</a> : null}</div>}
             <div className="small" style={{ marginTop: 4, whiteSpace: "pre-line" }}>{m.message}</div>
           </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-start" }}>
+              {m.kind === "CONTACT" && /^(Denial help|Billing question)/.test(m.topic ?? "") && (
+                m.questionId ? <span className="status-pill PUBLISHED">Published as Q&amp;A</span>
+                  : <Link className="btn sm" href={`/team/qa/new?from=${m.id}`} title={m.shareOk ? "Sender agreed to anonymous publishing" : "No permission: publish only a rewritten general question"}>Publish as Q&amp;A{m.shareOk ? "" : " *"}</Link>)}
               {(["REVIEWED", "ARCHIVED"] as const).map((st) => (
                 <form key={st} action={setInquiryStatus}><input type="hidden" name="inquiryId" value={m.id} /><input type="hidden" name="status" value={st} />
                   <SubmitButton className="btn sm ghost">{st === "REVIEWED" ? "Mark reviewed" : "Archive"}</SubmitButton></form>))}
             </div></div>))
           : <div className="empty">No new messages.</div>}
       </div></section>
+
+      <section className="section" id="qa-drafts">
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "baseline" }}>
+          <h2>Q&amp;A drafts <span className="muted small" style={{ fontFamily: "var(--f-body)", fontWeight: 400 }}>· common questions and reader questions waiting for review</span></h2>
+          <Link className="btn sm ghost" href="/team/qa/new">Write a common question</Link></div>
+        <div className="qlist">
+          {qaDrafts.length ? qaDrafts.map((q) => (
+            <div key={q.id} className="mqrow"><div className="body">
+              <div className="eyebrow">{q.source === "reader" ? "Reader question" : "Common question"} · {q.codes.slice(0, 3).join(", ")} · {timeAgo(q.createdAt)}</div>
+              <h3 style={{ margin: "4px 0" }}>{q.title}</h3>
+            </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <Link className="btn sm ghost" href={`/team/qa/${q.id}`}>Review</Link>
+                <form action={setQAStatus}><input type="hidden" name="id" value={q.id} /><input type="hidden" name="action" value="publish" /><SubmitButton className="btn sm">Publish</SubmitButton></form>
+                <form action={setQAStatus}><input type="hidden" name="id" value={q.id} /><input type="hidden" name="action" value="delete" /><SubmitButton className="btn sm ghost">Delete</SubmitButton></form>
+              </div></div>))
+            : <div className="empty">No drafts. Files in content/questions load here on each deploy, and you can publish answered messages from the section above.</div>}
+        </div>
+      </section>
 
       <section className="section"><h2>PHI reports</h2><div className="qlist">
         {reports.length ? reports.map(({ f, reporter, q, a, aq }) => (

@@ -90,6 +90,11 @@ export const questions = pgTable("questions", {
   removed: boolean("removed").notNull().default(false),
   voteCount: integer("vote_count").notNull().default(0),
 
+  /** member: asked by a signed-in user; reader: a message published anonymously by the team; team: a common question written by the team. */
+  source: text("source").notNull().default("member"),
+  /** Drafts are visible to the team only, until reviewed and published. */
+  draft: boolean("draft").notNull().default(false),
+
   createdAt: created(),
   updatedAt: updated(),
 }, (t) => [
@@ -191,6 +196,10 @@ export const inquiries = pgTable("inquiries", {
   experience: text("experience"),
   link: text("link"),
   message: text("message").notNull(),
+  /** The sender agreed we may publish their question anonymously as a public Q&A. */
+  shareOk: boolean("share_ok").notNull().default(false),
+  /** Set when the team published this message as a public Q&A. */
+  questionId: text("question_id"),
   status: inquiryStatusEnum("status").notNull().default("NEW"),
   createdAt: created(),
 }, (t) => [index("inquiries_status_idx").on(t.status, t.kind)]);

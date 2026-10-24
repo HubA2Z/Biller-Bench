@@ -12,7 +12,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async redirects() {
     // The old pricing page became the billing services page.
-    return [{ source: "/pricing", destination: "/services", permanent: true }];
+    // The question list moved from the home page to /questions; old filtered links follow it (query strings carry over).
+    const moved = ["q", "code", "payer", "state", "specialty", "status", "sort", "page"].map((key) => ({
+      source: "/", has: [{ type: "query" as const, key }], destination: "/questions", permanent: true,
+    }));
+    return [{ source: "/pricing", destination: "/services", permanent: true }, ...moved];
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

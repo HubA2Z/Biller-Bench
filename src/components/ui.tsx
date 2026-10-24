@@ -41,6 +41,7 @@ export function Badge({ user }: { user: Pick<User, "role" | "npiVerifiedAt" | "c
 /** The answer-deadline line shown on lists and question pages. */
 export function slaText(q: Question, now = new Date()): { text: string; cls: string } {
   if (q.status === "PENDING_PAYMENT") return { text: "Waiting for payment", cls: "late" };
+  if (q.source && q.source !== "member") return { text: "Answered by our team", cls: "done" };
   if (q.firstAnsweredAt) return { text: `Answered in ${formatDuration(q.firstAnsweredAt.getTime() - q.createdAt.getTime())}`, cls: "done" };
   if (!q.dueAt) return { text: "Waiting for an answer", cls: "" };
   const left = q.dueAt.getTime() - now.getTime();

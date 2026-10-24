@@ -10,12 +10,54 @@ import * as schema from "../src/db/schema";
 import { parseUpdateFile } from "../src/lib/content-file";
 import { slugify } from "../src/lib/slug";
 import { parseDenialFile } from "../src/lib/denials";
+import { parseQAFile } from "../src/lib/qa-file";
+import bcrypt from "bcryptjs";
 
 const DIR = path.join(process.cwd(), "content", "updates");
 
 export async function importContent(db: NodePgDatabase<typeof schema>) {
   await importUpdates(db);
   await importDenials(db);
+  await importQuestions(db);
+}
+
+const QA_DIR = path.join(process.cwd(), "content", "questions");
+
+/** Loads new files from content/questions as draft "common questions" with their expert answers (once per file). */
+async function importQuestions(db: NodePgDatabase<typeof schema>) {
+  if (!existsSync(QA_DIR)) return;
+  const files = readdirSync(QA_DIR).filter((f) => f.endsWith(".md") && !f.startsWith("_") && f.toLowerCase() !== "readme.md").sort();
+  const done = new Set((await db.select({ file: schema.contentImports.file }).from(schema.contentImports)).map((r) => r.file));
+  const pending = files.filter((f) => !done.has(`questions/${f}`));
+  if (!pending.length) { console.log("Questions: no new files."); return; }
+  const U = schema.users;
+  const authorEmail = process.env.CONTENT_AUTHOR_EMAIL?.toLowerCase();
+  const [answerer] = authorEmail
+    ? await db.select().from(U).where(and(eq(U.email, authorEmail), isNull(U.disabledAt)))
+    : await db.select().from(U).where(and(eq(U.role, "ADMIN"), isNull(U.disabledAt))).orderBy(asc(U.createdAt)).limit(1);
+  if (!answerer) { console.warn("Questions: skipped. No admin account exists yet to credit the answers to."); return; }
+  // The non-login account that owns team questions (same one the team queue uses).
+  const SYSTEM_EMAIL = "questions@billerbench.system";
+  let [sys] = await db.select({ id: U.id }).from(U).where(eq(U.email, SYSTEM_EMAIL));
+  if (!sys) [sys] = await db.insert(U).values({ email: SYSTEM_EMAIL, name: "BillerBench", role: "PROVIDER", emailNotifications: false,
+    passwordHash: await bcrypt.hash(randomBytes(24).toString("hex"), 10), disabledAt: new Date() }).returning({ id: U.id });
+  let added = 0;
+  for (const f of pending) {
+    const parsed = parseQAFile(readFileSync(path.join(QA_DIR, f), "utf8"));
+    if (!parsed.ok) { console.warn(`Questions: skipped ${f}: ${parsed.errors.join(" ")}`); continue; }
+    const d = parsed.qa;
+    await db.transaction(async (tx) => {
+      const [q] = await tx.insert(schema.questions).values({
+        slug: `${slugify(d.title, 70)}-${randomBytes(3).toString("hex")}`, title: d.title, body: d.body, authorId: sys.id,
+        codes: d.codes, modifiers: [], payerGroup: d.payerGroup, payerName: d.payerName, state: d.state, specialty: d.specialty,
+        tier: "FREE", isPrivate: false, status: "ANSWERED", source: "team", draft: true, firstAnsweredAt: new Date(),
+      }).returning({ id: schema.questions.id });
+      await tx.insert(schema.answers).values({ questionId: q.id, authorId: answerer.id, type: "EXPERT", body: d.answer });
+      await tx.insert(schema.contentImports).values({ file: `questions/${f}`, articleId: q.id });
+    });
+    added++;
+  }
+  console.log(`Questions: imported ${added} file(s) as drafts.`);
 }
 
 const DENIAL_DIR = path.join(process.cwd(), "content", "denials");

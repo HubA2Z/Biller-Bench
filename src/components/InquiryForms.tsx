@@ -44,14 +44,15 @@ export function ContactForm({ name = "", email = "", organization = "", topic }:
   );
 }
 
-export function DenialHelpForm({ code }: { code: string }) {
+/** Quick question without an account. With a code it is "Ask about CO-216"; without, a general billing question. */
+export function DenialHelpForm({ code }: { code?: string }) {
   const [state, action, pending] = useActionState<InquiryState, FormData>(submitDenialHelp, undefined);
   const [message, setMessage] = useState("");
   if (state?.ok) return <div className="phi ok" role="status"><strong>Got it.</strong> A certified biller will reply by email within one business day.</div>;
   return (
     <form className="form" noValidate onSubmit={submitWith(action)} style={{ position: "relative" }}>
       <Trap />
-      <input type="hidden" name="code" value={code} />
+      <input type="hidden" name="code" value={code ?? ""} />
       <div className="row2">
         <div className="field"><label htmlFor="dh-name">Your name <span className="req">*</span></label><input type="text" id="dh-name" name="name" autoComplete="name" required /></div>
         <div className="field"><label htmlFor="dh-email">Work email <span className="req">*</span></label><input type="email" id="dh-email" name="email" autoComplete="email" required /></div>
@@ -60,12 +61,14 @@ export function DenialHelpForm({ code }: { code: string }) {
         <div className="field"><label htmlFor="dh-org">Practice or company</label><input type="text" id="dh-org" name="organization" autoComplete="organization" /></div>
         <div className="field"><label htmlFor="dh-payer">Payer</label><input type="text" id="dh-payer" name="payer" placeholder="e.g. UHC, Medicare, Cigna" /></div>
       </div>
+      {!code && <div className="field"><label htmlFor="dh-codes">Codes, modifiers or denial code</label><input type="text" id="dh-codes" name="codes" maxLength={120} placeholder="e.g. 99214-25, 20610, CO-97" /></div>}
       <div className="field"><label htmlFor="dh-message">What happened? <span className="req">*</span></label>
         <textarea id="dh-message" name="message" value={message} onChange={(e) => setMessage(e.target.value)} maxLength={3000} style={{ minHeight: 100 }}
           placeholder="Codes and modifiers billed, the remark code, and what you've tried. No patient names, dates of birth or member IDs." required />
         <PhiNotice text={message} /></div>
+      <label className="ack"><input type="checkbox" name="shareOk" defaultChecked /><span>You may publish my question anonymously (without my name, practice or any patient details) so other billers can learn from the answer.</span></label>
       {state?.error && <ul className="errors" role="alert"><li>{state.error}</li></ul>}
-      <div><button type="submit" className="btn" disabled={pending}>{pending ? "Sending…" : `Ask about ${code}`}</button></div>
+      <div><button type="submit" className="btn" disabled={pending}>{pending ? "Sending…" : code ? `Ask about ${code}` : "Send my question"}</button></div>
     </form>
   );
 }
