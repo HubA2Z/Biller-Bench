@@ -146,6 +146,12 @@ npm run build
 
 ## Changelog
 
+**v0.13.1**: choose how a published Q&A's asker is shown (a provider, a medical biller, a BillerBench reader, or a common team question; default provider for messages), an Edit Q&A link for the team on published Q&As, and a Delete reply button for the team (a question with no expert answer left goes back to the open queue).
+
+**v0.13.0**: Providers for admins (`/team/providers`): searchable list of provider accounts with NPI status, question and service-request counts, join and last sign-in dates, CSV download, and a page per provider showing their profile, every question (public and private) with status, and their service requests.
+
+**v0.12.2**: Publish as Q&A accepts short questions (title 8+ characters, details optional, answer 20+), pre-fills the question from the message, and emails the person who asked a link to the published answer (once). Public question form minimum lowered to 10 characters. Adds `drizzle/0009_inquiry_notified.sql`.
+
 **v0.12.1**: Google Analytics 4 (`G-KL04RHTF1D`, change with `NEXT_PUBLIC_GA_ID`), not loaded for team members. Events: `generate_lead` (form_name: denial_help, billing_question, contact, service_quote), `job_application`, `audience_role`, `billing_help_answer`. No names, emails or message text are sent.
 
 **v0.12.0**: library-first home page (denial search, most-searched codes, categories, updates, "Recently answered" once 10+ public answers exist); the question list moved to `/questions` (old `/?code=` links redirect); asking without an account on `/ask` with an optional "publish anonymously" consent; **Publish as Q&A** from team messages (`/team/qa/new`); Q&A drafts with review/publish/delete in the Team queue; 20 common questions in `content/questions/` loaded as drafts on deploy; questions show "BillerBench reader" or "Common question" instead of a person. Adds `drizzle/0008_qa_sources.sql`.

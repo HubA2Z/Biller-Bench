@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { listQuestions, type ListFilters } from "@/lib/queries";
 import { PAYER_GROUPS, SPECIALTIES, STATES, stateLabel } from "@/lib/taxonomy";
+import { askerLabel } from "@/lib/qa-labels";
 import { ANSWER_TIME } from "@/lib/plans";
 import { questionPath } from "@/lib/paths";
 import { timeAgo } from "@/lib/sla";
@@ -124,7 +125,7 @@ export default async function Questions({ searchParams }: { searchParams: Promis
                 <div style={{ minWidth: 0 }}>
                   <h3>{q.title}</h3>
                   <div className="chips"><TierChips q={q} authorPlan={authorPlan} /><QuestionChips q={q} /></div>
-                  <div className="meta"><span className={`sla ${s.cls}`}>{s.text}</span><span>{q.source === "member" ? <>{authorName}{authorOrg ? `, ${authorOrg}` : ""} · {stateLabel(q.state)}</> : q.source === "team" ? "Common question · BillerBench team" : "BillerBench reader"}</span><span>{timeAgo(q.createdAt)}</span></div>
+                  <div className="meta"><span className={`sla ${s.cls}`}>{s.text}</span><span>{q.source === "member" ? <>{authorName}{authorOrg ? `, ${authorOrg}` : ""} · {stateLabel(q.state)}</> : askerLabel(q.source)?.short ?? "BillerBench reader"}</span><span>{timeAgo(q.createdAt)}</span></div>
                 </div>
               </Link>
             );

@@ -5,9 +5,10 @@ import { PAYER_GROUPS, SPECIALTIES, STATES } from "@/lib/taxonomy";
 import { renderMarkdown } from "@/lib/markdown";
 import { handleMarkdownPaste } from "@/lib/paste";
 import { PhiNotice } from "./PhiNotice";
+import { ASKER_LABELS, ASKER_SOURCES, type AskerSource } from "@/lib/qa-labels";
 
 export type QADraft = {
-  id?: string; inquiryId?: string; source: "reader" | "team"; title: string; body: string; answer: string;
+  id?: string; inquiryId?: string; source: AskerSource; title: string; body: string; answer: string;
   codes: string; payerGroup: string; payerName: string; state: string; specialty: string; draft?: boolean;
 };
 
@@ -32,17 +33,19 @@ export function QAForm({ initial, original }: { initial: QADraft; original?: str
       <div className="form">
         {initial.id && <input type="hidden" name="id" value={initial.id} />}
         {initial.inquiryId && <input type="hidden" name="inquiryId" value={initial.inquiryId} />}
-        <input type="hidden" name="source" value={initial.source} />
+
         {original && (
           <div className="banner" style={{ display: "block" }}>
             <div className="eyebrow" style={{ marginBottom: 6 }}>Original message (private, never published)</div>
             <div className="small" style={{ whiteSpace: "pre-line" }}>{original}</div>
           </div>
         )}
-        <p className="small muted" style={{ margin: 0 }}>Shown as asked by <strong>{initial.source === "reader" ? "a BillerBench reader" : "the BillerBench team"}</strong>. Rewrite it as a general question: remove names, practice details, dates and anything that could identify a patient.</p>
+        <div className="field"><label htmlFor="qa-source">Show the question as asked by</label>
+          <select id="qa-source" name="source" defaultValue={initial.source}>{ASKER_SOURCES.map((s) => <option key={s} value={s}>{ASKER_LABELS[s].option}</option>)}</select>
+          <span className="hint">No name or practice is ever shown. Rewrite the question as a general one: remove names, practice details, dates and anything that could identify a patient.</span></div>
         <div className="field"><label htmlFor="qa-title">Question title <span className="req">*</span></label>
           <input type="text" id="qa-title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} placeholder="e.g. Why did Medicare deny 99214 with CO-97 when billed with 20610?" /></div>
-        <div className="field"><label htmlFor="qa-body">Question <span className="req">*</span></label>
+        <div className="field"><label htmlFor="qa-body">Question details <span className="muted small">(optional for short questions)</span></label>
           <textarea id="qa-body" value={body} onChange={(e) => setBody(e.target.value)} onPaste={(e) => handleMarkdownPaste(e, body, setBody)} style={{ minHeight: 120 }} /></div>
         <div className="row2">
           <div className="field"><label htmlFor="qa-codes">Codes <span className="req">*</span></label>

@@ -1,0 +1,1 @@
+ALTER TABLE "inquiries" ADD COLUMN "answer_notified_at" timestamp with time zone;

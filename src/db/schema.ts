@@ -200,6 +200,8 @@ export const inquiries = pgTable("inquiries", {
   shareOk: boolean("share_ok").notNull().default(false),
   /** Set when the team published this message as a public Q&A. */
   questionId: text("question_id"),
+  /** When the sender was emailed a link to the published answer. */
+  answerNotifiedAt: timestamp("answer_notified_at", { withTimezone: true }),
   status: inquiryStatusEnum("status").notNull().default("NEW"),
   createdAt: created(),
 }, (t) => [index("inquiries_status_idx").on(t.status, t.kind)]);

@@ -100,6 +100,15 @@ export async function notifyNewProvider(u: { name: string; email: string; practi
   });
 }
 
+/** Tell someone who asked without an account that their question was answered and published. */
+export async function notifyInquiryAnswered(i: { name: string; email: string }, q: Question) {
+  await sendEmailSafe({
+    to: i.email,
+    subject: "Our billers answered your question",
+    text: `Hi ${i.name},\n\nThanks for your question. A certified biller on our team answered it, and we published it on BillerBench without your name or any identifying details so other practices can learn from it too:\n\n${link(q)}\n\nIf you have a follow-up, just reply to this email or ask another question at ${appUrl()}/ask.\n\nBillerBench`,
+  });
+}
+
 export async function sendPasswordReset(email: string, name: string, token: string) {
   await sendEmailSafe({
     to: email,

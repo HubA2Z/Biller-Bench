@@ -43,3 +43,20 @@ export async function postAnswer(_: AnswerState, form: FormData): Promise<Answer
   revalidatePath("/team");
   return { ok: true };
 }
+
+/** Team members can delete a reply (for example a duplicate answer). It's hidden everywhere, kept in the database. */
+export async function deleteAnswer(form: FormData) {
+  const user = await requireUser();
+  if (!isStaff(user)) return;
+  const id = String(form.get("answerId"));
+  const path = String(form.get("path") ?? "/");
+  const [a] = await db.update(A).set({ removed: true }).where(eq(A.id, id)).returning();
+  if (a) {
+    // If no expert answer is left, the question goes back to the open queue.
+    const left = await db.select({ id: A.id }).from(A).where(and(eq(A.questionId, a.questionId), eq(A.type, "EXPERT"), eq(A.removed, false))).limit(1);
+    if (!left.length) await db.update(Q).set({ status: "OPEN", firstAnsweredAt: null, acceptedAnswerId: null }).where(eq(Q.id, a.questionId));
+    else await db.update(Q).set({ acceptedAnswerId: null }).where(and(eq(Q.id, a.questionId), eq(Q.acceptedAnswerId, a.id)));
+  }
+  revalidatePath(path);
+  revalidatePath("/team");
+}

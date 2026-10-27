@@ -4,13 +4,6 @@ import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 
-/** How a question's author is shown, by source. */
-export const SOURCE_LABEL: Record<string, string | null> = {
-  member: null,
-  reader: "a BillerBench reader",
-  team: "the BillerBench team",
-};
-
 const SYSTEM_EMAIL = "questions@billerbench.system";
 
 /**

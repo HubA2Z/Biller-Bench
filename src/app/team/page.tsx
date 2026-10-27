@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, asc, desc, eq, gte, isNotNull, isNull, sql, count } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNotNull, isNull, ne, sql, count } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db, schema } from "@/db";
 import { isAdmin, requireStaff } from "@/lib/auth";
@@ -13,8 +13,10 @@ import { startOfMonth } from "@/lib/queries";
 import { approveNpi, resolveFlag, setLeadStatus } from "@/app/actions/team";
 import { setInquiryStatus } from "@/app/actions/inquiries";
 import { setQAStatus } from "@/app/actions/qa";
+import { askerLabel } from "@/lib/qa-labels";
 import { CAREER_ROLES } from "@/lib/company";
 import { AUDIENCE_ROLES } from "@/lib/audience";
+import { SYSTEM_EMAIL } from "@/lib/providers";
 import { SubmitButton } from "@/components/SubmitButton";
 import { TierChips, slaText } from "@/components/ui";
 
@@ -35,7 +37,7 @@ export default async function Team() {
       .leftJoin(Q, eq(Q.id, F.questionId)).leftJoin(A, eq(A.id, F.answerId)).leftJoin(AQ, eq(AQ.id, A.questionId))
       .where(eq(F.status, "OPEN")).orderBy(asc(F.createdAt)),
     db.select().from(U).where(and(eq(U.role, "PROVIDER"), isNotNull(U.npi), isNull(U.npiVerifiedAt))).limit(50),
-    db.select({ providers: count() }).from(U).where(eq(U.role, "PROVIDER")),
+    db.select({ providers: count() }).from(U).where(and(eq(U.role, "PROVIDER"), ne(U.email, SYSTEM_EMAIL))),
     db.select({ askedThisMonth: count() }).from(Q).where(and(gte(Q.createdAt, startOfMonth()), eq(Q.removed, false))),
     db.select().from(I).where(eq(I.status, "NEW")).orderBy(desc(I.createdAt)).limit(100),
     db.select({ role: AR.role, n: count(), yes: sql<number>`count(*) filter (where ${AR.wantsHelp})::int` }).from(AR).where(gte(AR.createdAt, since)).groupBy(AR.role),
@@ -53,12 +55,12 @@ export default async function Team() {
     <>
       <div className="pagehead"><span className="eyebrow">Staff view</span>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}><h1>Team queue</h1>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="btn sm ghost" href="/team/denials">Denial code pages</Link>{isAdmin(me) && <><Link className="btn sm ghost" href="/team/updates">Articles and updates</Link><Link className="btn sm ghost" href="/team/members">Manage team members</Link></>}</div></div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="btn sm ghost" href="/team/denials">Denial code pages</Link>{isAdmin(me) && <><Link className="btn sm ghost" href="/team/providers">Providers</Link><Link className="btn sm ghost" href="/team/updates">Articles and updates</Link><Link className="btn sm ghost" href="/team/members">Manage team members</Link></>}</div></div>
         <p className="muted small" style={{ margin: 0 }}>Sorted by due time. Every question is due within one business day.</p></div>
       <div className="ruleset" style={{ marginBottom: 22 }}>
         <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{open.length}</b>open questions{overdue ? <span className="sla late"> · {overdue} overdue</span> : null}</div>
         <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{askedThisMonth}</b>questions this month</div>
-        <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{providers}</b>provider accounts</div>
+        <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{providers}</b>{isAdmin(me) ? <Link href="/team/providers">provider accounts</Link> : "provider accounts"}</div>
         <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{leads.length}</b>new service requests</div>
         <div><b style={{ fontFamily: "var(--f-mono)", fontSize: 20 }}>{messages.length}</b>new messages and applications</div>
       </div>
@@ -135,7 +137,7 @@ export default async function Team() {
         <div className="qlist">
           {qaDrafts.length ? qaDrafts.map((q) => (
             <div key={q.id} className="mqrow"><div className="body">
-              <div className="eyebrow">{q.source === "reader" ? "Reader question" : "Common question"} · {q.codes.slice(0, 3).join(", ")} · {timeAgo(q.createdAt)}</div>
+              <div className="eyebrow">{askerLabel(q.source)?.list ?? "Question"} · {q.codes.slice(0, 3).join(", ")} · {timeAgo(q.createdAt)}</div>
               <h3 style={{ margin: "4px 0" }}>{q.title}</h3>
             </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

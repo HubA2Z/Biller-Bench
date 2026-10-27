@@ -73,7 +73,7 @@ const denialHelpSchema = z.object({
   payer: opt(80),
   code: z.string().trim().regex(/^[A-Z]{2}-[A-Z]?\d{1,3}$/, "Unknown denial code.").optional().or(z.literal("")),
   codes: opt(120),
-  message: z.string().trim().min(15, "Tell us a little about the claim (at least 15 characters).").max(3000),
+  message: z.string().trim().min(10, "Tell us a little more (at least 10 characters).").max(3000),
 });
 
 /** Quick questions without an account: "Ask about this denial" on code pages and the /ask page. */

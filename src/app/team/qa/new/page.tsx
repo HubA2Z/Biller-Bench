@@ -23,8 +23,10 @@ export default async function NewQA({ searchParams }: { searchParams: Promise<{ 
       </div>
       <div style={{ maxWidth: 900 }}>
         <QAForm original={inq ? `${inq.topic ?? ""}\n\n${inq.message}` : undefined} initial={{
-          inquiryId: inq?.id, source: inq ? "reader" : "team",
-          title: code ? `${code} denial: ` : "", body: "", answer: "", codes,
+          inquiryId: inq?.id, source: inq ? "provider" : "team",
+          title: code ? `${code} denial: ` : "", answer: "", codes,
+          // Start from the message (without the payer/codes lines); the editor asks you to remove anything identifying.
+          body: inq ? inq.message.replace(/^(Payer|Codes): .*\n?/gm, "").trim() : "",
           payerGroup: "General", payerName: "All payers", state: "US", specialty: "Primary Care",
         }} />
       </div>

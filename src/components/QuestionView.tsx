@@ -6,9 +6,11 @@ import { renderMarkdown } from "@/lib/markdown";
 import { questionPath } from "@/lib/paths";
 import { timeAgo } from "@/lib/sla";
 import { stateLabel } from "@/lib/taxonomy";
+import { askerLabel } from "@/lib/qa-labels";
 import { ARTICLE_KINDS } from "@/lib/articles";
 import { denialTeaser } from "@/lib/denials";
 import { acceptAnswer, reportPhi, toggleVote } from "@/app/actions/questions";
+import { deleteAnswer } from "@/app/actions/answers";
 import { AnswerForm } from "./AnswerForm";
 import { SubmitButton } from "./SubmitButton";
 import { Badge, Icon, QuestionChips, TierChips, slaText } from "./ui";
@@ -58,7 +60,7 @@ export function QuestionView({ data, user, notice, updates = [], denials = [] }:
           <div className="body" dangerouslySetInnerHTML={{ __html: renderMarkdown(q.body) }} />
           <div className="byline">{q.source === "member"
             ? <>Asked {timeAgo(q.createdAt)} by {author.name}{author.practiceName ? `, ${author.practiceName}` : ""} · {stateLabel(q.state)} <Badge user={author} /></>
-            : q.source === "team" ? <>Common question · answered by the BillerBench team</> : <>Asked by a BillerBench reader · {timeAgo(q.createdAt)}</>}</div>
+            : <>{askerLabel(q.source)?.byline ?? "Asked by a BillerBench reader"}{q.source !== "team" ? ` · ${timeAgo(q.createdAt)}` : ""}{staff && <> · <Link href={`/team/qa/${q.id}`}>Edit Q&amp;A</Link></>}</>}</div>
           {user && <form action={reportPhi} className="postactions"><input type="hidden" name="questionId" value={q.id} /><input type="hidden" name="path" value={path} /><button className="linkbtn">Report PHI</button></form>}
         </div>
       </div>
@@ -87,7 +89,10 @@ export function QuestionView({ data, user, notice, updates = [], denials = [] }:
               <div className={`atype ${a.type === "EXPERT" ? "full" : "quick"}`}>{a.type === "EXPERT" ? "Expert answer" : "Follow-up"}{acc ? " · Marked as solution" : ""}{a.hidden ? " · Hidden (reported)" : ""}</div>
               <div className="body" style={{ marginTop: 6 }} dangerouslySetInnerHTML={{ __html: renderMarkdown(a.body) }} />
               <div className="byline">{aa.name}{aa.credentials ? <span className="muted">, {aa.credentials}</span> : null} <Badge user={aa} /> <span>· {timeAgo(a.createdAt)}</span></div>
-              {user && <form action={reportPhi} className="postactions"><input type="hidden" name="answerId" value={a.id} /><input type="hidden" name="path" value={path} /><button className="linkbtn">Report PHI</button></form>}
+              <div className="postactions" style={{ display: "flex", gap: 14 }}>
+                {user && <form action={reportPhi}><input type="hidden" name="answerId" value={a.id} /><input type="hidden" name="path" value={path} /><button className="linkbtn">Report PHI</button></form>}
+                {staff && <form action={deleteAnswer}><input type="hidden" name="answerId" value={a.id} /><input type="hidden" name="path" value={path} /><button className="linkbtn" title="Removes this reply from the site (team only)">Delete reply</button></form>}
+              </div>
             </div>
           </div>
         );
